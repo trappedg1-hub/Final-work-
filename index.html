@@ -986,72 +986,46 @@ main{
   background:radial-gradient(55% 68% at 50% 100%, rgba(145,70,255,.42), rgba(77,227,255,.12) 46%, transparent 72%);
   transition:background .5s ease;
 }
-/* ---- кресло: собрано из частей и стоит ровно под ней ---- */
+/* ---- кресло: сгенерированный спрайт, посадка подгоняется под позу ---- */
 .hero-chair{
-  --ch-body-1:#463d60; --ch-body-2:#241f35;
-  --ch-metal-1:#aaa4c3; --ch-metal-2:#5d5777;
   position:absolute; inset:0; z-index:2; pointer-events:none; opacity:0;
-  filter:drop-shadow(0 10px 22px rgba(0,0,0,.55));
-  transition:opacity .45s ease, filter .45s ease;
+  transition:opacity .4s ease;
+  /* tier-1 офисный стул по умолчанию */
+  --ch-h:85.1%; --ch-t:18.2%; --ch-clip:0%; --ch-sway:0deg;
 }
-#scene.chair-1 .hero-chair, #scene.chair-2 .hero-chair{ opacity:1; }
-#scene.chair-2 .hero-chair{
-  --ch-body-1:#ff9ed3; --ch-body-2:#c94a86;
-  --ch-metal-1:#ffd9ec; --ch-metal-2:#b0748f;
-  filter:drop-shadow(0 0 24px rgba(255,121,198,.45)) drop-shadow(0 10px 22px rgba(0,0,0,.55));
-}
-.hero-chair i{ position:absolute; display:block; }
+#scene.chair-1 .hero-chair, #scene.chair-2 .hero-chair, #scene.chair-3 .hero-chair{ opacity:1; }
 
-/* спинка */
-.ch-back{
-  left:0; right:0; margin:0 auto; width:52%; height:30%; bottom:44%;
-  border-radius:22px 22px 14px 14px;
-  background:linear-gradient(180deg, var(--ch-body-1), var(--ch-body-2));
-  border:1px solid rgba(255,255,255,.14);
-  box-shadow:inset 0 8px 16px -8px rgba(255,255,255,.4), inset 0 -16px 24px -14px rgba(0,0,0,.7);
+/* размеры (в % высоты сцены): спинка выше, база на полу */
+#scene.chair-1 .hero-chair{ --ch-h:85.1%; --ch-t:18.2%; }
+#scene.chair-2 .hero-chair{ --ch-h:92.6%; --ch-t:8.3%; }
+#scene.chair-3 .hero-chair{ --ch-h:92.1%; --ch-t:12.7%; }
+
+/* поза 3 — нога на ногу: она сидит выше, кресло поднимаем */
+#scene.stage-3.chair-1 .hero-chair{ --ch-t:13.7%; }
+#scene.stage-3.chair-2 .hero-chair{ --ch-t:3.8%; }
+#scene.stage-3.chair-3 .hero-chair{ --ch-t:8.2%; }
+
+/* поза 4 — откинулась назад: видна только спинка за плечами и головой */
+#scene.stage-4 .hero-chair{ --ch-clip:47%; --ch-t:1%; --ch-h:91.5%; }
+#scene.stage-4.chair-2 .hero-chair{ --ch-clip:53%; --ch-t:2%; --ch-h:79%; }
+#scene.stage-4.chair-3 .hero-chair{ --ch-clip:50%; --ch-t:2%; --ch-h:84%; }
+
+.chair-img{
+  position:absolute; left:50%; top:var(--ch-t);
+  height:var(--ch-h); width:auto; max-width:none; max-height:none;
+  transform:translateX(-50%);
+  clip-path:inset(0 0 var(--ch-clip) 0);
+  filter:drop-shadow(0 12px 26px rgba(0,0,0,.5));
+  transition:opacity .3s ease;
 }
-/* ушки розового геймерского кресла */
-.ch-ear{ display:none; }
-#scene.chair-2 .ch-ear{
-  display:block; width:18%; height:9%; bottom:70%; border-radius:50%;
-  background:radial-gradient(circle at 50% 45%, var(--ch-body-1), var(--ch-body-2) 76%);
-  box-shadow:inset 0 0 0 2px rgba(255,255,255,.22);
+/* мягкая тень на полу под крестовиной (в позе 4 её нет — база за кадром) */
+.hero-chair::after{
+  content:''; position:absolute; left:0; right:0; margin:0 auto;
+  bottom:.8%; width:54%; height:4%; border-radius:50%;
+  background:radial-gradient(closest-side, rgba(0,0,0,.5), transparent 74%);
+  filter:blur(3px);
 }
-.ch-ear.l{ left:17%; }
-.ch-ear.r{ right:17%; }
-/* сиденье */
-.ch-seat{
-  left:0; right:0; margin:0 auto; width:64%; height:5%; bottom:42%;
-  border-radius:12px 12px 9px 9px;
-  background:linear-gradient(180deg, var(--ch-body-1), var(--ch-body-2));
-  border:1px solid rgba(255,255,255,.12);
-  box-shadow:inset 0 3px 6px -2px rgba(255,255,255,.35);
-}
-/* газлифт */
-.ch-post{
-  left:0; right:0; margin:0 auto; width:3.4%; height:20%; bottom:22%;
-  border-radius:3px; opacity:.92;
-  background:linear-gradient(90deg, var(--ch-metal-2), var(--ch-metal-1) 42%, var(--ch-metal-2));
-}
-/* крестовина */
-.ch-base{
-  left:0; right:0; margin:0 auto; width:56%; height:11%; bottom:11%;
-  opacity:.6;
-  background:
-    radial-gradient(closest-side at 50% 50%, var(--ch-metal-1), transparent 74%) 50% 50% / 30% 58% no-repeat,
-    conic-gradient(from 198deg at 50% 50%,
-      transparent 0 7%, var(--ch-metal-2) 7% 11%,
-      transparent 11% 27%, var(--ch-metal-2) 27% 31%,
-      transparent 31% 47%, var(--ch-metal-2) 47% 51%,
-      transparent 51% 67%, var(--ch-metal-2) 67% 71%,
-      transparent 71% 87%, var(--ch-metal-2) 87% 91%, transparent 91%);
-}
-/* тень на полу */
-.ch-shadow{
-  left:0; right:0; margin:0 auto; width:66%; height:6%; bottom:9%;
-  border-radius:50%; background:radial-gradient(closest-side, rgba(0,0,0,.6), transparent 74%);
-  filter:blur(4px);
-}
+#scene.stage-4 .hero-chair::after{ display:none; }
 
 .hero-mic{
   position:absolute; right:-4%; bottom:0; width:44%; height:56%;
@@ -1204,13 +1178,7 @@ main{
         <img class="art-bg" id="artBg" alt="" aria-hidden="true" />
         <div class="hero-glow" aria-hidden="true"></div>
         <div class="hero-chair" aria-hidden="true">
-          <i class="ch-back"></i>
-          <i class="ch-ear l"></i>
-          <i class="ch-ear r"></i>
-          <i class="ch-seat"></i>
-          <i class="ch-post"></i>
-          <i class="ch-base"></i>
-          <i class="ch-shadow"></i>
+          <img class="chair-img" id="chairImg" src="assets/chair_office.webp" alt="" decoding="async" />
         </div>
         <div class="hero-mic" aria-hidden="true"></div>
 
@@ -2101,6 +2069,7 @@ function applyStage(stage, announce){
 
   if (el.char) el.char.setAttribute('data-mood', String(stage));
   el.scene.classList.toggle('stage-4', stage === 4);
+  el.scene.classList.toggle('stage-3', stage === 3);
   el.stageTitle.textContent = s.label;
   if (el.goalText) el.goalText.textContent = s.goal || s.note;
   el.stageSub.textContent = s.quote || s.note;
@@ -2683,11 +2652,21 @@ const UP_IDS = ['chair', 'mic', 'light', 'cam'];
 
 function admProgressPct(){ return clamp(state.progress / goalTarget(), 0, 1); }
 
+const CHAIR_ART = { 1: 'assets/chair_office.webp', 2: 'assets/chair_pink.webp', 3: 'assets/chair_throne.webp' };
+/* тихо прогреваем остальные тиры, чтобы апгрейд не мигал белым */
+setTimeout(() => {
+  [2, 3].forEach(t => { const im = new Image(); im.src = CHAIR_ART[t]; });
+}, 2500);
 function applyUpClasses(){
   UP_IDS.forEach(k => [1, 2, 3].forEach(v => el.scene.classList.remove(`${k}-${v}`)));
-  Object.entries(state.up).forEach(([k, v]) => { if (v > 0) el.scene.classList.add(`${k}-${v}`); });
-  /* дешёвое tier-1 кресло у неё всегда — первый платный апгрейд это уже «геймерское» */
-  if (el.scene) el.scene.classList.add('chair-' + Math.max(1, Math.min(2, state.up.chair || 0)));
+  Object.entries(state.up).forEach(([k, v]) => {
+    if (k !== 'chair' && v > 0) el.scene.classList.add(`${k}-${v}`);
+  });
+  /* дешёвый tier-1 стул у неё всегда — первый платный апгрейд это уже «геймерское» */
+  const lvl = Math.max(1, Math.min(3, (state.up.chair || 0) + 1));
+  if (el.scene) el.scene.classList.add('chair-' + lvl);
+  const img = document.getElementById('chairImg');
+  if (img && img.getAttribute('src') !== CHAIR_ART[lvl]) img.setAttribute('src', CHAIR_ART[lvl]);
 }
 function admUpClasses(){ applyUpClasses(); }
 

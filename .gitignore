@@ -3,3 +3,6 @@ images/
 .netrc
 node_modules/
 dist/
+
+# сырьё для генерации кресел (пересобирается через tools/build_chairs.mjs)
+assets/_gen_*.png
