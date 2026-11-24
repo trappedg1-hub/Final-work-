@@ -70,7 +70,7 @@
   <header>
     <div>
       <h1>Day 1 · <span>upscale ×4</span> · Anime4K ACNet (CPU)</h1>
-      <div class="sub">4 утверждённых кадра · 2340×3120 (3:4) · RGBA WebP q95 · ACNet ×2</div>
+      <div class="sub">4 утверждённых кадра · 3840×5120 (5K, 3:4) · RGBA WebP q90 · ACNet ×4</div>
     </div>
     <div class="controls">
       <button class="btn on" id="bDark" type="button">тёмный</button>
@@ -84,17 +84,17 @@
   <footer>
     Пайплайн v2: хромакей только по фону (цветовая дистанция + заливка от границ, глаза не трогаются)
     → мягкая альфа 1.5 px → despill контура → edge-fill → RGB ×4 <code>pyanime4k acnet-gan</code>,
-    альфа Lanczos → холст 3:4 (2340×3120, по низу, с полем над головой) → WebP q95 method 6.
+    альфа Lanczos → холст 3:4 5K (3840×5120, по низу, с полем над головой) → WebP q90 method 6.
     Клик по кадру — открыть файл в полном размере.
   </footer>
 </div>
 
 <script>
   const SHOTS = [
-    { f:'assets/art_day1_sg1.webp', t:'Стадия 1 · капюшон поднят', s:'0.51 МБ', n:'3:4 · 2340×3120' },
-    { f:'assets/art_day1_sg2.webp', t:'Стадия 2 · капюшон снят',  s:'0.62 МБ', n:'3:4 · 2340×3120' },
-    { f:'assets/art_day1_sg3.webp', t:'Стадия 3 · топ + носок',   s:'0.65 МБ', n:'3:4 · 2340×3120' },
-    { f:'assets/art_day1_sg4.webp', t:'Стадия 4 · финал, ножки',  s:'0.84 МБ', n:'3:4 · 2340×3120' }
+    { f:'assets/art_day1_sg1.webp', t:'Стадия 1 · капюшон поднят', s:'0.70 МБ', n:'5K · 3840×5120' },
+    { f:'assets/art_day1_sg2.webp', t:'Стадия 2 · капюшон снят',  s:'0.83 МБ', n:'5K · 3840×5120' },
+    { f:'assets/art_day1_sg3.webp', t:'Стадия 3 · топ + носок',   s:'0.87 МБ', n:'5K · 3840×5120' },
+    { f:'assets/art_day1_sg4.webp', t:'Стадия 4 · финал, ножки',  s:'0.91 МБ', n:'5K · 3840×5120' }
   ];
 
   const grid = document.getElementById('grid');

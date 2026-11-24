@@ -75,12 +75,16 @@ def prep_desk(factor=2.0, out_w=2600):
     return art
 
 
-def prep_plate(factor=2.0, crop_bottom=1227, edge_row=1018, ramp=10, q=90):
+def prep_plate(factor=4.0, crop_bottom=1227, edge_row=1018, ramp=20, q=88):
     """Плата комнаты: кроп низа -> ACNet x2 -> WebP. Передний план режется из того же
     массива, поэтому в игре BG и FG совпадают пиксель в пиксель."""
     src = Image.open(os.path.join(SRC, '_plate_a.png')).convert('RGB')
     plate = src.crop((0, 0, src.width, crop_bottom))
     big = acnet_upscale(plate, factor)
+    # 5K: длинная сторона 5120
+    if big.height != 5120:
+        w5 = round(big.width * 5120 / big.height)
+        big = big.resize((w5, 5120), Image.LANCZOS)
     k = big.height / crop_bottom
     edge = max(1, min(big.height - 1, int(round(edge_row * k))))
 

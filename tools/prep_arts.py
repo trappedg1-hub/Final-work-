@@ -21,7 +21,7 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SRC_DIR = os.path.join(ROOT, 'images', 'raw_day1')
 OUT_DIR = os.path.join(ROOT, 'assets')
 
-CANVAS = (2340, 3120)      # 3:4 master, в 1.5x больше прошлого
+CANVAS = (3840, 5120)      # 3:4 мастер 5K (19.7 МП)
 TOP_PAD = 0.02
 FEATHER = 1.5
 FLOOD_THRESH = 110
@@ -122,7 +122,7 @@ def normalise(img):
     return canvas
 
 
-def run(tag, src_name, factor=2.0):
+def run(tag, src_name, factor=4.0):
     im = Image.open(os.path.join(SRC_DIR, src_name)).convert('RGB')
     keyed, ref = key_chroma(im)
     arr = np.array(keyed)
@@ -137,7 +137,7 @@ def run(tag, src_name, factor=2.0):
     art = normalise(art)
 
     dest = os.path.join(OUT_DIR, f'art_day1_{tag}.webp')
-    art.save(dest, 'WEBP', quality=95, alpha_quality=100, method=6)
+    art.save(dest, 'WEBP', quality=90, alpha_quality=100, method=6)
     print(f'{tag}: {os.path.basename(src_name)} plate rgb({",".join(str(int(v)) for v in ref)}) '
           f'-> {CANVAS[0]}x{CANVAS[1]} {os.path.getsize(dest) / 1e6:.2f} MB')
 
