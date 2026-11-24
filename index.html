@@ -128,7 +128,7 @@ button{ font-family:inherit; color:inherit; border:0; background:none; cursor:po
 /* ---------- DONATION TICKER ---------- */
 .ticker{
   flex:0 0 auto;
-  height:22px; overflow:hidden; position:relative;
+  height:18px; overflow:hidden; position:relative;
   border-top:1px solid rgba(145,70,255,.16);
   border-bottom:1px solid rgba(145,70,255,.16);
   background:linear-gradient(90deg, rgba(145,70,255,.14), rgba(77,227,255,.06));
@@ -139,7 +139,7 @@ button{ font-family:inherit; color:inherit; border:0; background:none; cursor:po
   display:inline-flex; align-items:center; gap:26px;
   height:100%; white-space:nowrap;
   padding-left:100%;
-  font-size:10.5px; color:#cfc6ea;
+  font-size:9.5px; color:#cfc6ea;
   animation:marquee 26s linear infinite;
   will-change:transform;
 }
@@ -852,30 +852,70 @@ main{
    ============================================================ */
 
 /* ---- compact status bar ---- */
-.statusbar{
-  position:relative; display:flex; align-items:center; gap:6px;
-  padding:8px 10px 11px; background:#0e0e10; border-bottom:0;
+.topnav{
+  position:relative; flex:0 0 auto;
+  display:flex; align-items:center; gap:7px;
+  padding:7px 10px 10px; background:#18181b;
+  border-bottom:1px solid rgba(255,255,255,.06);
 }
-.statusbar .avatar{ width:30px; height:30px; padding:1.5px; }
-.statusbar .avatar > span{ font-size:13px; }
-.sb-id{ display:flex; align-items:center; gap:5px; min-width:0; }
-.sb-id b{ font-size:13px; font-weight:800; letter-spacing:.1px; color:#efeff1; white-space:nowrap; }
-.statusbar .live-badge{ font-size:8px; padding:1.5px 5px; letter-spacing:.5px; }
-.sb-viewers{ font-size:10.5px; color:#adadb8; white-space:nowrap; font-variant-numeric:tabular-nums; }
-.sb-goal{ font-size:10px; color:#a9a3c4; white-space:nowrap; font-variant-numeric:tabular-nums; }
-.sb-goal b{ color:#e3d9ff; font-weight:800; }
-.sb-goal i{ font-style:normal; opacity:.75; }
-.sb-viewers b{ color:#efeff1; font-weight:700; }
-.statusbar .balance{ margin-left:auto; padding:4px 8px; font-size:11px; gap:4px; }
-.statusbar .icon-btn{ width:26px; height:26px; font-size:12px; }
-.statusbar .gear-btn{ margin-left:0; }
-.statusbar .gear-btn{ box-shadow:inset 0 0 0 1px rgba(145,70,255,.55), 0 0 12px -6px #9146FF; }
+.tw-logo{ display:grid; place-items:center; width:24px; height:24px; flex:0 0 auto; }
+.tw-logo svg{ width:22px; height:22px; display:block; filter:drop-shadow(0 0 10px rgba(145,70,255,.55)); }
+.tw-search{
+  flex:1 1 auto; min-width:0; height:30px; display:flex; align-items:center; gap:6px;
+  padding:0 11px; border-radius:999px;
+  background:#26262c; border:1px solid rgba(255,255,255,.07);
+  font-size:12px; color:#adadb8;
+}
+.tw-mag{ font-size:15px; line-height:1; color:#adadb8; }
+.topnav .balance{ padding:4px 8px; font-size:11px; gap:4px; flex:0 0 auto; }
+.topnav .icon-btn{ width:26px; height:26px; font-size:12px; }
+.topnav .gear-btn{ box-shadow:inset 0 0 0 1px rgba(145,70,255,.55), 0 0 12px -6px #9146FF; }
 .goal-line{ position:absolute; left:0; right:0; bottom:0; height:3px;
   background:rgba(255,255,255,.07); overflow:hidden; }
 .goal-line > i{ display:block; height:100%; width:0;
   background:linear-gradient(90deg,#9146FF,#7a5bff 45%,#4de3ff);
   box-shadow:0 0 12px rgba(145,70,255,.95), 0 0 22px rgba(77,227,255,.5);
   transition:width .35s cubic-bezier(.4,0,.2,1); }
+
+/* ---- twitch channel strip under the player ---- */
+.chrow{
+  flex:0 0 auto; display:flex; align-items:center; gap:9px;
+  padding:7px 11px 8px; background:#18181b;
+  border-bottom:1px solid rgba(255,255,255,.06);
+}
+.ch-avatar{
+  position:relative; width:36px; height:36px; flex:0 0 auto; border-radius:50%;
+  padding:2px; background:linear-gradient(140deg,#9146FF,#4de3ff);
+  box-shadow:0 0 0 1px rgba(255,255,255,.06);
+}
+.ch-avatar > span{
+  display:grid; place-items:center; width:100%; height:100%; border-radius:50%;
+  background:#0e0e10; font-size:15px;
+}
+.live-dot{
+  position:absolute; right:-1px; bottom:-1px; width:11px; height:11px; border-radius:50%;
+  background:#eb0400; border:2px solid #18181b;
+  box-shadow:0 0 10px rgba(235,4,0,.9);
+  animation:pulse 1.6s ease-in-out infinite;
+}
+.ch-info{ flex:1 1 auto; min-width:0; }
+.ch-name{ display:flex; align-items:center; gap:6px; min-width:0; }
+.ch-name b{ font-size:13.5px; font-weight:800; color:#efeff1; white-space:nowrap;
+  overflow:hidden; text-overflow:ellipsis; }
+.ch-name .live-badge{ background:#eb0400; font-size:8px; padding:1.5px 5px; letter-spacing:.5px;
+  box-shadow:0 0 12px -2px rgba(235,4,0,.8); }
+.ch-meta{ display:flex; align-items:center; gap:5px; margin-top:1px;
+  font-size:10.5px; color:#adadb8; white-space:nowrap; overflow:hidden; }
+.ch-meta b{ color:#efeff1; font-weight:700; font-variant-numeric:tabular-nums; }
+.ch-meta i{ font-style:normal; opacity:.7; }
+.ch-dot{ opacity:.4; }
+.ch-sub{
+  flex:0 0 auto; height:30px; padding:0 13px; border-radius:6px;
+  font-size:11.5px; font-weight:700; color:#fff;
+  background:#9146FF; box-shadow:0 8px 20px -12px #9146FF;
+  transition:transform .12s ease, background .2s;
+}
+.ch-sub:active{ transform:scale(.95); background:#7d2ff0; }
 
 /* ---- hero scene ---- */
 #tab-stream{ padding:0; gap:0; }
@@ -896,7 +936,7 @@ main{
 .hero .art-tap{ position:absolute; inset:0; }
 .hero .art-img{
   position:absolute; left:50%; bottom:0;
-  height:96%; width:auto; max-width:none; max-height:none;
+  height:100%; width:auto; max-width:none; max-height:none;
   transform:translateX(-50%);
   object-fit:contain; object-position:50% 100%;
   padding:0; background:transparent;
@@ -905,21 +945,39 @@ main{
 }
 .hero .art-img.on{ opacity:1; }
 .hero .art-img{ will-change:opacity; }
-#scene.stage-4 .art-img{ height:91%; }
+#scene.stage-4 .art-img{ height:94%; }
 
 .hero-glow{
   position:absolute; left:-10%; right:-10%; bottom:-6%; height:62%; z-index:2; pointer-events:none;
   background:radial-gradient(55% 68% at 50% 100%, rgba(145,70,255,.42), rgba(77,227,255,.12) 46%, transparent 72%);
   transition:background .5s ease;
 }
+/* tier-1: простой дешёвый офисный стул */
 .hero-chair{
-  position:absolute; left:50%; bottom:-6%; width:66%; height:42%;
+  position:absolute; left:50%; bottom:-3%; width:min(66%, 290px); height:44%;
   transform:translateX(-50%); z-index:2; pointer-events:none; opacity:0;
-  background:radial-gradient(48% 58% at 50% 88%, rgba(255,121,198,.55), rgba(145,70,255,.24) 48%, transparent 74%);
-  filter:blur(7px); transition:opacity .45s ease;
+  background:
+    linear-gradient(180deg, rgba(60,54,78,.96), rgba(34,30,46,.96)) 50% 0% / 56% 40% no-repeat,
+    linear-gradient(180deg, rgba(74,66,96,.96), rgba(40,35,54,.96)) 50% 40% / 74% 9% no-repeat,
+    linear-gradient(180deg, rgba(150,146,170,.7), rgba(96,92,116,.6)) 50% 49% / 5% 20% no-repeat,
+    radial-gradient(52% 22% at 50% 100%, rgba(170,166,196,.7), rgba(120,116,145,.28) 62%, transparent 76%) 50% 100% / 86% 24% no-repeat;
+  border-radius:12px 12px 0 0;
+  filter:drop-shadow(0 14px 26px rgba(0,0,0,.55));
+  transition:opacity .45s ease, filter .45s ease;
 }
-#scene.chair-1 .hero-chair{ opacity:.5; }
-#scene.chair-2 .hero-chair{ opacity:1; }
+#scene.chair-1 .hero-chair{ opacity:.95; }
+/* tier-2: розовое геймерское с ушками */
+#scene.chair-2 .hero-chair{
+  opacity:1;
+  background:
+    radial-gradient(closest-side at 16% 9%, rgba(255,140,200,.95), rgba(255,140,200,0) 72%) 50% 0% / 100% 18% no-repeat,
+    radial-gradient(closest-side at 84% 9%, rgba(255,140,200,.95), rgba(255,140,200,0) 72%) 50% 0% / 100% 18% no-repeat,
+    linear-gradient(180deg, #ff8ec9, #d94f92) 50% 2% / 56% 40% no-repeat,
+    linear-gradient(180deg, #ff9ed3, #c94a86) 50% 41% / 74% 9% no-repeat,
+    linear-gradient(180deg, rgba(220,215,235,.85), rgba(140,132,160,.7)) 50% 49% / 5% 20% no-repeat,
+    radial-gradient(52% 22% at 50% 100%, rgba(255,150,205,.85), rgba(190,90,150,.3) 62%, transparent 78%) 50% 100% / 86% 24% no-repeat;
+  filter:drop-shadow(0 0 26px rgba(255,121,198,.55)) drop-shadow(0 14px 26px rgba(0,0,0,.55));
+}
 .hero-mic{
   position:absolute; right:-4%; bottom:0; width:44%; height:56%;
   z-index:2; pointer-events:none; opacity:0; transition:opacity .45s ease;
@@ -1043,14 +1101,15 @@ main{
 
   <!-- ================= TOP BAR ================= -->
   <!-- ================= COMPACT STATUS BAR ================= -->
-  <header class="topbar statusbar" id="statusbar">
-    <div class="avatar" id="liveAvatar"><span>🌸</span></div>
-    <div class="sb-id">
-      <b id="chName">mika_live</b>
-      <span class="live-badge"><i></i>LIVE</span>
-    </div>
-    <span class="sb-viewers">👤 <b id="viewerCount">1 420</b></span>
-    <span class="sb-goal">🎯 <b id="goalNow">0</b><i id="goalMax">/100</i></span>
+  <!-- ================= TWITCH TOP NAV ================= -->
+  <header class="topnav" id="topnav">
+    <span class="tw-logo" aria-hidden="true">
+      <svg viewBox="0 0 26 26">
+        <path fill="#9146FF" d="M3.4 2.2h19.2v13.1l-4.9 4.9h-3.9l-3.2 3.2H7.8v-3.2H3.4z"/>
+        <path fill="#0e0e10" d="M11 6.9h2.2v5.6H11zm4.5 0h2.2v5.6h-2.2z"/>
+      </svg>
+    </span>
+    <div class="tw-search" aria-hidden="true"><span class="tw-mag">⌕</span><span>Поиск</span></div>
     <div class="balance"><span class="coin"></span><span id="bitsCount">0</span></div>
     <button class="icon-btn" id="muteBtn" aria-label="Звук">🔊</button>
     <button class="icon-btn gear-btn" id="gearBtn" type="button" aria-label="Админ-панель" title="Админ-панель">⚙︎</button>
@@ -1091,6 +1150,22 @@ main{
 
         <div id="fpsBadge">60 FPS</div>
       </div>
+
+      <!-- twitch channel strip: avatar + live dot + viewers + goal + subscribe -->
+      <div class="chrow" id="chrow">
+        <div class="ch-avatar" id="liveAvatar"><span>🌸</span><i class="live-dot"></i></div>
+        <div class="ch-info">
+          <div class="ch-name"><b id="chName">mika_live</b><span class="live-badge"><i></i>LIVE</span></div>
+          <div class="ch-meta">
+            <span>👤 <b id="viewerCount">1 420</b></span>
+            <span class="ch-dot">·</span>
+            <span>🎯 <b id="goalNow">0</b><i id="goalMax">/100</i></span>
+            <span class="ch-dot">·</span>
+            <span><b id="subCount">0</b> сабов</span>
+          </div>
+        </div>
+        <button class="ch-sub" id="subBtn" type="button">Подписаться</button>
+      </div>
     </section>
 
     <!-- ================= TAB: EARNINGS ================= -->
@@ -1110,7 +1185,7 @@ main{
         <div class="section-title"><span>Пассивный доход</span><b>bits / сек</b></div>
         <div id="passiveList"></div>
 
-        <div class="section-title"><span>Подарить сабки</span><b id="subCount">0</b></div>
+        <div class="section-title"><span>Подарить сабки</span><b>1 сабка = +0.06/сек</b></div>
         <div class="gift-row">
           <button class="gift" type="button" data-gift="1"><b>×1</b><span>💎 250</span></button>
           <button class="gift" type="button" data-gift="5"><b>×5</b><span>💎 1 100</span></button>
@@ -1494,7 +1569,7 @@ const state = {
   subs: 0,
   combo: 0,
   lastTapAt: 0,
-  up: { chair: 0, mic: 0, light: 0, cam: 0 },
+  up: { chair: 0, mic: 0, light: 0, cam: 0 },   /* tier-1 кресло есть «из коробки», см. applyUpClasses */
   earn: { ad: 0, raid: 0, sponsor: 0 },
   giftSubs: 0,
   dayRewardBits: 0
@@ -2111,7 +2186,8 @@ function buyGiftSubs(n){
   state.giftSubs += n;
   state.subs += n;
   state.progress = clamp(state.progress + n * 1.2, 0, goalTarget());
-  pushMessage({ n: 'Игрок', c: '#ffd166', b: 'vip' }, `подарил ${n} платных подпис${n === 1 ? 'ку' : 'ок'}!`, 'gift');
+  const giftWord = n === 1 ? 'платную подписку' : (n < 5 ? 'платные подписки' : 'платных подписок');
+  pushMessage({ n: 'Игрок', c: '#ffd166', b: 'vip' }, `подарил ${n} ${giftWord}!`, 'gift');
   sfxDing(); motionLean(1000); vibrate([16, 40, 16, 40, 26]);
   toast(`👑 Подарено ${n} платных подписок!`);
   spawn(W / 2, H * .5, 'burst');
@@ -2270,8 +2346,7 @@ el.shopList.addEventListener('click', (e) => {
 
   state.bits -= price;
   state.up[id]++;
-  el.scene.classList.remove(`${id}-0`, `${id}-1`, `${id}-2`);
-  el.scene.classList.add(`${id}-${state.up[id]}`);
+  applyUpClasses();
   vibrate([14, 30, 14]);
   sfxDing();
   motionTap(1);
@@ -2371,6 +2446,16 @@ el.tabbar.addEventListener('click', (e) => {
   if (tab === 'days'){ renderDays(); }
 });
 
+/* twitch "Подписаться" под плеером = подарить себе сабку Мии */
+const subBtn = document.getElementById('subBtn');
+if (subBtn){
+  subBtn.title = 'Подарить сабку · 250 bits';
+  subBtn.addEventListener('click', () => {
+    audioInit();
+    buyGiftSubs(1);
+  });
+}
+
 /* ==========================================================
    MODAL
    ========================================================== */
@@ -2442,9 +2527,7 @@ function boot(){
   renderDays();
   renderHUD();
 
-  Object.entries(state.up).forEach(([k, v]) => {
-    if (v > 0) el.scene.classList.add(`${k}-${v}`);
-  });
+  applyUpClasses();
 
   applyStage(stageOf(clamp(state.progress / goalTarget(), 0, 1)), false);
 
@@ -2484,10 +2567,13 @@ const UP_IDS = ['chair', 'mic', 'light', 'cam'];
 
 function admProgressPct(){ return clamp(state.progress / goalTarget(), 0, 1); }
 
-function admUpClasses(){
+function applyUpClasses(){
   UP_IDS.forEach(k => [1, 2, 3].forEach(v => el.scene.classList.remove(`${k}-${v}`)));
   Object.entries(state.up).forEach(([k, v]) => { if (v > 0) el.scene.classList.add(`${k}-${v}`); });
+  /* дешёвое tier-1 кресло у неё всегда — первый платный апгрейд это уже «геймерское» */
+  if (el.scene) el.scene.classList.add('chair-' + Math.max(1, Math.min(2, state.up.chair || 0)));
 }
+function admUpClasses(){ applyUpClasses(); }
 
 function admGoDay(i){
   state.dayIndex = clamp(i, 0, DAY_STAGES.length - 1);
