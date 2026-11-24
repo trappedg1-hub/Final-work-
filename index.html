@@ -355,12 +355,13 @@ main{
   100% { transform:scale(1.03, 1.02); }     /* rest */
 }
 
+/* никакого масштаба: арт не тянется, кресло не «дышит» вместе с ней */
 @keyframes streamerIdle{
-  0%, 100% { transform:scaleY(1) translateY(0); }
-  50%      { transform:scaleY(1.009) translateY(-1px); }
+  0%, 100% { transform:translateY(0); }
+  50%      { transform:translateY(-1.5px); }
 }
 .art-img{ transform-origin:50% 50%; }
-.art-lean.idle .art-img{ animation:streamerIdle 4.4s ease-in-out infinite; transform-origin:50% 68%; }
+.art-lean.idle .art-img{ animation:streamerIdle 4.6s ease-in-out infinite; }
 
 #fpsBadge{
   position:absolute; left:10px; bottom:10px; z-index:7; display:none;
@@ -992,17 +993,17 @@ main{
   transition:transform .55s cubic-bezier(.4,0,.2,1), opacity .45s ease;
 }
 /* поза 4: камера ближе, стол уходит из кадра */
-#scene.stage-4 .art-tap{ padding-bottom:0; }
-#scene.stage-4 .art-img{ height:100%; max-height:none; }
-#scene.stage-4 .art-desk{ transform:translateY(104%); opacity:0; }
-/* стадия 4: камера подъезжает — комната придвигается, её собственный стол уходит за кадр */
-#scene.stage-4 .art-bg{ transform:translateY(10%) scale(1.2); }
+/* стадия 4: она отодвигается назад и задирает ножки — ступни ложатся на кромку стола */
+#scene.stage-4 .art-tap{ padding-bottom:16.5%; }
+#scene.stage-4 .art-img{ height:80%; max-height:none; }
 
 .hero-glow{
   position:absolute; left:-10%; right:-10%; bottom:-6%; height:62%; z-index:2; pointer-events:none;
   background:radial-gradient(58% 60% at 50% 100%, rgba(145,70,255,.16), rgba(77,227,255,.05) 48%, transparent 74%);
   transition:background .5s ease;
+  animation:glowBreathe 5.4s ease-in-out infinite;
 }
+@keyframes glowBreathe{ 0%,100%{ opacity:.55 } 50%{ opacity:1 } }
 .hero-mic{
   position:absolute; right:-4%; bottom:0; width:44%; height:56%;
   z-index:7; pointer-events:none; opacity:0; transition:opacity .45s ease;
