@@ -973,10 +973,12 @@ main{
   object-fit:contain; object-position:50% 100%;
   padding:0; background:transparent; border:0;
   opacity:0; transition:opacity .35s ease;
+  z-index:1;                 /* база — самый низ стопки */
 }
 .hero .art-img.on{ opacity:1; }
 /* кадры-эмоции ложатся ровно на базовый кадр (силуэт тот же, проверено по альфе) */
-.hero .art-emo{ z-index:1; opacity:0; transition:opacity .16s ease; }
+.hero .art-emo{ z-index:2; opacity:0; transition:opacity .16s ease; }
+#artEmoBlink{ z-index:3; }
 .hero .art-emo.on{ opacity:1; }
 .hero .art-emo.blink{ transition:none; }
 /* грудь: отдельный маленький проп (720 px, маска запечена в альфу).
@@ -984,7 +986,7 @@ main{
 .hero .art-chest{
   position:absolute; left:22%; top:12%; width:56%; height:38%;
   background-position:50% 50%; background-size:100% 100%; background-repeat:no-repeat;
-  z-index:2; pointer-events:none; transform-origin:50% 32%;
+  z-index:4; pointer-events:none; transform-origin:50% 32%;
   opacity:0; transition:opacity .3s ease;
   will-change:transform;
 }
@@ -1015,7 +1017,7 @@ main{
 
 /* румянец: два мягких пятна на щеках, сила зависит от «смущения» */
 .hero .art-blush{
-  position:absolute; inset:0; z-index:3; pointer-events:none;
+  position:absolute; inset:0; z-index:5; pointer-events:none;
   opacity:0; transition:opacity .3s ease; mix-blend-mode:soft-light;
   background-repeat:no-repeat;
   background-image:
@@ -1770,17 +1772,22 @@ function emoSet(tag){
     });
     return;
   }
+  const big = window.innerWidth > 900;
   [['shy', shy], ['blink', blink]].forEach(([mood, el]) => {
-    el.srcset = `assets/art_emo_${tag}_${mood}.webp 1170w, assets/art_emo_${tag}_${mood}@2x.webp 1920w`;
-    el.src = `assets/art_emo_${tag}_${mood}@2x.webp`;
+    el.onerror = () => { el.classList.remove('on'); };
+    el.src = `assets/art_emo_${tag}_${mood}${big ? '_lg' : ''}.webp`;
   });
   emoSchedule();
+  if (/emo=hold/.test(location.search)) emoSmile(true);
 }
+
+const EMO_TEST = /emo=(test|hold)/.test(location.search);
 
 function emoSchedule(){
   clearTimeout(EMO.blinkTimer);
   if (!EMO.tag) return;
-  EMO.blinkTimer = setTimeout(() => { emoBlink(); emoSchedule(); }, 2600 + Math.random() * 4200);
+  const wait = EMO_TEST ? 900 : 2600 + Math.random() * 4200;
+  EMO.blinkTimer = setTimeout(() => { emoBlink(); emoSchedule(); }, wait);
 }
 
 /* моргание: кат на 100–130 мс, иногда двойное */
@@ -1855,7 +1862,7 @@ function motionTap(power){
   chestHit();
   blushAdd(power >= 0.9 ? 26 : 7.5);
   if (power >= 0.9){ emoBlink(135); emoSmile(true, 2400); }
-  else if (Math.random() < .45) emoBlink();
+  else emoBlink();
   if (power >= 0.9) motionLean(1500);
 }
 
