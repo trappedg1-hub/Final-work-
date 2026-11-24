@@ -340,7 +340,7 @@ main{
   transition:transform .42s cubic-bezier(.175,.885,.32,1.275);
   will-change:transform;
 }
-.art-lean.lean{ transform:scale(1.04) translateY(-8px); }
+.art-lean.lean{ filter:brightness(1.06); }
 
 /* rest scale > 1 keeps every edge covered while the squash plays */
 .art-tap{
@@ -348,20 +348,10 @@ main{
   transform:scale(1.03, 1.02);
   will-change:transform;
 }
-.art-tap.bounce{ animation:streamerTap .34s cubic-bezier(.175,.885,.32,1.275); }
-@keyframes streamerTap{
-  0%   { transform:scale(1.055, 1.006); }   /* squashed under the finger */
-  45%  { transform:scale(1.022, 1.030); }   /* elastic rebound */
-  100% { transform:scale(1.03, 1.02); }     /* rest */
-}
-
-/* никакого масштаба: арт не тянется, кресло не «дышит» вместе с ней */
-@keyframes streamerIdle{
-  0%, 100% { transform:translateY(0); }
-  50%      { transform:translateY(-1.5px); }
-}
+.art-tap.bounce{ animation:none; }
+/* никаких подскоков и растяжений: геометрия спрайта в покое и на тап не меняется.
+   Единственное движение — «физика груди» на отдельном слое с мягкой маской. */
 .art-img{ transform-origin:50% 50%; }
-.art-lean.idle .art-img{ animation:streamerIdle 4.6s ease-in-out infinite; }
 
 #fpsBadge{
   position:absolute; left:10px; bottom:10px; z-index:7; display:none;
@@ -985,6 +975,32 @@ main{
 .hero .art-img.on{ opacity:1; }
 .hero .art-img{ will-change:opacity; }
 /* передний план: столешница пиксель в пиксель с фоном, выше героини */
+.hero .art-chest{
+  position:absolute; left:50%; bottom:2%; height:90%; width:auto; max-height:100%;
+  transform:translateX(-50%); z-index:2;
+  pointer-events:none; opacity:0; transition:opacity .35s ease;
+  will-change:transform;
+  -webkit-mask-image:radial-gradient(ellipse var(--rx,21%) var(--ry,10%) at var(--cx,50%) var(--cy,36%),
+    #000 0%, #000 42%, rgba(0,0,0,0) 84%);
+  mask-image:radial-gradient(ellipse var(--rx,21%) var(--ry,10%) at var(--cx,50%) var(--cy,36%),
+    #000 0%, #000 42%, rgba(0,0,0,0) 84%);
+  -webkit-mask-repeat:no-repeat; mask-repeat:no-repeat;
+}
+.hero .art-chest.on{ opacity:1; }
+#scene.stage-3 .art-chest{ --cy:35%; --rx:22%; }
+#scene.stage-4 .art-chest{ bottom:16.5%; height:80%; --cy:29%; --rx:23%; --ry:11%; }
+
+@keyframes chestJiggle{
+  0%   { transform:translateX(-50%) translateY(0); }
+  16%  { transform:translateX(-50%) translateY(1.3%); }
+  38%  { transform:translateX(-50%) translateY(-0.55%); }
+  58%  { transform:translateX(-50%) translateY(0.3%); }
+  78%  { transform:translateX(-50%) translateY(-0.12%); }
+  100% { transform:translateX(-50%) translateY(0); }
+}
+.hero .art-chest.hit{ animation:chestJiggle .55s cubic-bezier(.25,.75,.3,1); }
+@media (prefers-reduced-motion: reduce){ .hero .art-chest.hit{ animation:none; } }
+
 .hero .art-desk{
   position:absolute; inset:0; width:100%; height:100%;
   object-fit:cover; object-position:50% 50%;
@@ -1159,6 +1175,8 @@ main{
         <div class="art-lean" id="artLean">
           <div class="art-tap" id="artTap">
             <img class="art-img" id="artImg" alt="" />
+            <!-- физика груди: копия кадра с мягкой маской, двигается только на тап -->
+            <img class="art-chest" id="artChest" alt="" aria-hidden="true" />
           </div>
         </div>
 
@@ -1629,7 +1647,7 @@ const ADMIN = { open: false, pausedChat: false, pausedSim: false, taps: 0, lastT
 /* ---------- DOM ---------- */
 const $ = (s) => document.querySelector(s);
 const el = {
-  scene: $('#scene'), char: $('#char'), artImg: $('#artImg'), artBg: $('#artBg'), artDesk: $('#artDesk'), fx: $('#fx'),
+  scene: $('#scene'), char: $('#char'), artImg: $('#artImg'), artChest: $('#artChest'), artBg: $('#artBg'), artDesk: $('#artDesk'), fx: $('#fx'),
   bits: $('#bitsCount'), viewers: $('#viewerCount'), viewersPill: $('#viewersPill'),
   subs: $('#subCount'), chatOnline: $('#chatOnline'),
   stageTitle: $('#stageTitle'), stageSub: $('#stageSub'), goalText: $('#goalText'),
@@ -1679,12 +1697,18 @@ function motionSync(src){
 }
 
 /* tap = elastic squash; power >= 0.9 (donation / purchase / stage-up) also leans in */
+function chestHit(){
+  const c = document.getElementById('artChest');
+  if (!c || !c.classList.contains('on')) return;
+  c.classList.remove('hit');
+  void c.offsetWidth;
+  c.classList.add('hit');
+}
+
+/* тап: шевелится только грудь, спрайт стоит на месте */
 function motionTap(power){
-  if (MOTION.reduced || !MOTION.tap) return;
-  const t = MOTION.tap;
-  t.classList.remove('bounce');
-  void t.offsetWidth;
-  t.classList.add('bounce');
+  if (MOTION.reduced) return;
+  chestHit();
   if (power >= 0.9) motionLean(1500);
 }
 
@@ -2085,12 +2109,14 @@ function loadArt(src){
     if (token !== artToken) return;
     el.artImg.src = src;
     el.artImg.classList.add('on');
+    if (el.artChest) { el.artChest.src = src; el.artChest.classList.add('on'); }
     motionSync(src);
   };
   probe.onerror = () => {
     if (token !== artToken) return;
     el.artImg.classList.remove('on');
     el.artImg.removeAttribute('src');
+    if (el.artChest) { el.artChest.classList.remove('on','hit'); el.artChest.removeAttribute('src'); }
     motionSync('');
   };
   probe.src = src;

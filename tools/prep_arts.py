@@ -65,7 +65,10 @@ def key_chroma(im, thresh=FLOOD_THRESH, tight=TIGHT):
     fa = np.array(work)
     border_bg = (fa[..., 0] > 245) & (fa[..., 1] < 12) & (fa[..., 2] > 245)
 
-    bg = colour_bg | border_bg
+    # страховка от «дыр»: фоном может быть только пиксель, где зелёный доминирует.
+    # без этого тёмное кресло и чёрные шорты попадали в допуск суммы и выедались.
+    green_dom = (src[..., 1] > src[..., 0] + 28) & (src[..., 1] > src[..., 2] + 28)
+    bg = (colour_bg | border_bg) & green_dom
     alpha = np.where(bg, 0.0, 255.0)
     a_img = Image.fromarray(alpha.astype(np.uint8), 'L')
     soft = np.array(a_img.filter(ImageFilter.GaussianBlur(FEATHER))).astype(np.float32)
