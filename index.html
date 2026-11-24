@@ -847,6 +847,194 @@ main{
 .adm-check input{ width:16px; height:16px; accent-color:#9146FF; }
 .adm-body textarea{ margin-top:9px; min-height:80px; resize:vertical;
   font-family:ui-monospace, SFMono-Regular, Menlo, monospace; font-size:11px; line-height:1.4; }
+/* ============================================================
+   HEROINE-FIRST SHELL (hero scene + floating chat + earnings)
+   ============================================================ */
+
+/* ---- compact status bar ---- */
+.statusbar{
+  position:relative; display:flex; align-items:center; gap:6px;
+  padding:8px 10px 11px; background:#0e0e10; border-bottom:0;
+}
+.statusbar .avatar{ width:30px; height:30px; padding:1.5px; }
+.statusbar .avatar > span{ font-size:13px; }
+.sb-id{ display:flex; align-items:center; gap:5px; min-width:0; }
+.sb-id b{ font-size:13px; font-weight:800; letter-spacing:.1px; color:#efeff1; white-space:nowrap; }
+.statusbar .live-badge{ font-size:8px; padding:1.5px 5px; letter-spacing:.5px; }
+.sb-viewers{ font-size:10.5px; color:#adadb8; white-space:nowrap; font-variant-numeric:tabular-nums; }
+.sb-goal{ font-size:10px; color:#a9a3c4; white-space:nowrap; font-variant-numeric:tabular-nums; }
+.sb-goal b{ color:#e3d9ff; font-weight:800; }
+.sb-goal i{ font-style:normal; opacity:.75; }
+.sb-viewers b{ color:#efeff1; font-weight:700; }
+.statusbar .balance{ margin-left:auto; padding:4px 8px; font-size:11px; gap:4px; }
+.statusbar .icon-btn{ width:26px; height:26px; font-size:12px; }
+.statusbar .gear-btn{ margin-left:0; }
+.statusbar .gear-btn{ box-shadow:inset 0 0 0 1px rgba(145,70,255,.55), 0 0 12px -6px #9146FF; }
+.goal-line{ position:absolute; left:0; right:0; bottom:0; height:3px;
+  background:rgba(255,255,255,.07); overflow:hidden; }
+.goal-line > i{ display:block; height:100%; width:0;
+  background:linear-gradient(90deg,#9146FF,#7a5bff 45%,#4de3ff);
+  box-shadow:0 0 12px rgba(145,70,255,.95), 0 0 22px rgba(77,227,255,.5);
+  transition:width .35s cubic-bezier(.4,0,.2,1); }
+
+/* ---- hero scene ---- */
+#tab-stream{ padding:0; gap:0; }
+.hero{
+  position:relative; flex:1 1 auto; min-height:0; overflow:hidden;
+  background:radial-gradient(120% 80% at 50% 8%, #1b1430 0%, #0b0912 60%, #07060b 100%);
+  touch-action:manipulation;
+}
+.hero .art-bg{
+  position:absolute; inset:-6%; width:112%; height:112%;
+  object-fit:cover; object-position:50% 18%;
+  opacity:.85; z-index:1; pointer-events:none;
+  filter:blur(26px) saturate(1.25) brightness(.46);
+  transform:scale(1.06);
+  transition:opacity .5s ease, filter .5s ease;
+}
+.hero .art-lean{ position:absolute; inset:0; z-index:4; }
+.hero .art-tap{ position:absolute; inset:0; }
+.hero .art-img{
+  position:absolute; left:50%; bottom:0;
+  height:94%; width:auto; max-width:none; max-height:none;
+  transform:translateX(-50%);
+  object-fit:contain; object-position:50% 100%;
+  padding:0; background:transparent;
+  filter:drop-shadow(0 18px 40px rgba(0,0,0,.55));
+  opacity:0; transition:opacity .35s ease;
+}
+.hero .art-img.on{ opacity:1; }
+.hero .art-img{ will-change:opacity; }
+#scene.stage-4 .art-img{ height:89%; }
+
+.hero-glow{
+  position:absolute; left:-10%; right:-10%; bottom:-6%; height:62%; z-index:2; pointer-events:none;
+  background:radial-gradient(55% 68% at 50% 100%, rgba(145,70,255,.42), rgba(77,227,255,.12) 46%, transparent 72%);
+  transition:background .5s ease;
+}
+.hero-chair{
+  position:absolute; left:50%; bottom:-6%; width:66%; height:42%;
+  transform:translateX(-50%); z-index:2; pointer-events:none; opacity:0;
+  background:radial-gradient(48% 58% at 50% 88%, rgba(255,121,198,.55), rgba(145,70,255,.24) 48%, transparent 74%);
+  filter:blur(7px); transition:opacity .45s ease;
+}
+#scene.chair-1 .hero-chair{ opacity:.5; }
+#scene.chair-2 .hero-chair{ opacity:1; }
+.hero-mic{
+  position:absolute; right:-4%; bottom:0; width:44%; height:56%;
+  z-index:2; pointer-events:none; opacity:0; transition:opacity .45s ease;
+  background:
+    linear-gradient(84deg, transparent 48.4%, rgba(226,226,240,.9) 49.2%, rgba(226,226,240,.9) 50.4%, transparent 51.2%) no-repeat,
+    radial-gradient(closest-side at 14% 8%, rgba(240,240,252,.98), rgba(168,168,196,.85) 55%, transparent 74%) no-repeat,
+    radial-gradient(closest-side at 50% 100%, rgba(20,16,30,.9), transparent 72%) no-repeat;
+  background-size:100% 100%, 30% 19%, 60% 40%;
+  filter:drop-shadow(0 0 10px rgba(145,70,255,.45));
+}
+#scene.mic-1 .hero-mic{ opacity:.55; }
+#scene.mic-2 .hero-mic{ opacity:1; }
+
+.cam-tag{
+  position:absolute; right:10px; bottom:10px; z-index:6; display:none;
+  font-size:9px; font-weight:900; letter-spacing:1.2px;
+  padding:3px 7px; border-radius:7px;
+  color:#9dffce; background:rgba(4,10,8,.55);
+  border:1px solid rgba(120,255,200,.4);
+  box-shadow:0 0 16px -6px rgba(120,255,200,.8);
+}
+#scene.cam-1 .cam-tag, #scene.cam-2 .cam-tag{ display:block; }
+
+/* light tiers repaint the room */
+#scene.light-1 .hero-glow{
+  background:radial-gradient(55% 68% at 50% 100%, rgba(255,168,116,.42), rgba(255,120,90,.12) 48%, transparent 72%); }
+#scene.light-2 .hero-glow{
+  background:radial-gradient(58% 70% at 50% 100%, rgba(145,70,255,.55), rgba(77,227,255,.26) 46%, transparent 74%); }
+#scene.light-2 .hero-glow{ animation:rgbGlow 11s linear infinite; }
+#scene.light-2 .art-bg{ filter:blur(24px) saturate(1.7) brightness(.52); animation:rgbHue 16s linear infinite; }
+@keyframes rgbGlow{
+  0%   { background:radial-gradient(58% 70% at 50% 100%, rgba(145,70,255,.58), rgba(77,227,255,.24) 46%, transparent 74%); }
+  33%  { background:radial-gradient(58% 70% at 50% 100%, rgba(77,227,255,.52), rgba(255,121,198,.22) 46%, transparent 74%); }
+  66%  { background:radial-gradient(58% 70% at 50% 100%, rgba(255,92,168,.55), rgba(145,70,255,.24) 46%, transparent 74%); }
+  100% { background:radial-gradient(58% 70% at 50% 100%, rgba(145,70,255,.58), rgba(77,227,255,.24) 46%, transparent 74%); }
+}
+@keyframes rgbHue{ from{ filter:blur(24px) saturate(1.75) hue-rotate(0deg) brightness(.52); }
+  to{ filter:blur(24px) saturate(1.75) hue-rotate(360deg) brightness(.52); } }
+
+/* ---- floating glass chat ---- */
+.live-chat{
+  position:absolute; left:8px; bottom:8px; z-index:7;
+  width:min(42%, 172px); max-height:40%;
+  display:flex; flex-direction:column; gap:3px;
+  padding:7px 8px 6px; border-radius:14px;
+  background:rgba(0,0,0,.45);
+  -webkit-backdrop-filter:blur(8px); backdrop-filter:blur(8px);
+  border:1px solid rgba(255,255,255,.12);
+  box-shadow:0 14px 34px -20px rgba(0,0,0,.9);
+  overflow:hidden; pointer-events:none;
+  -webkit-mask-image:linear-gradient(to bottom, transparent 0, rgba(0,0,0,.5) 8%, #000 24%);
+  mask-image:linear-gradient(to bottom, transparent 0, rgba(0,0,0,.5) 8%, #000 24%);
+}
+.lc-goal{
+  flex:0 0 auto; font-size:9px; font-weight:800; color:#d8c8ff;
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+  letter-spacing:.2px; opacity:.95;
+}
+.lc-feed{
+  flex:1 1 auto; min-height:0; overflow-y:auto; scroll-behavior:smooth;
+  display:flex; flex-direction:column; gap:2px;
+  scrollbar-width:none; -webkit-overflow-scrolling:touch;
+}
+.lc-feed::-webkit-scrollbar{ display:none; }
+.lc-feed .msg{
+  flex-wrap:nowrap; gap:4px; padding:2px 3px; border-radius:6px;
+  font-size:10px; line-height:1.32; animation-duration:.18s;
+}
+.lc-feed .msg .u{ font-weight:800; white-space:nowrap; }
+.lc-feed .msg .m{ color:#e7e4f2; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.lc-feed .msg .badge{ font-size:7px; padding:0 3px; border-radius:3px; letter-spacing:0; }
+.lc-feed .msg.donate{
+  background:linear-gradient(90deg, rgba(255,205,74,.24), rgba(255,205,74,.04));
+  border:1px solid rgba(255,205,74,.4);
+}
+.lc-feed .msg.gift{
+  background:linear-gradient(90deg, rgba(255,214,92,.92), rgba(255,150,40,.55));
+  border:1px solid rgba(255,236,160,.95);
+  color:#2a1a00; font-weight:900; font-size:10px;
+  box-shadow:0 0 20px rgba(255,200,70,.6);
+  animation:giftIn .35s cubic-bezier(.2,1.4,.4,1) both;
+}
+@keyframes giftIn{ from{ opacity:0; transform:translateY(8px) scale(.92); } to{ opacity:1; transform:none; } }
+.lc-foot{ flex:0 0 auto; font-size:8px; color:#b6b1cc; display:flex; gap:3px; align-items:center; letter-spacing:.2px; }
+.lc-foot b{ color:#e9e6f6; }
+
+/* ---- earnings tab ---- */
+.earn-scroll{ flex:1 1 auto; min-height:0; overflow-y:auto; padding:2px 2px 14px; -webkit-overflow-scrolling:touch; }
+.earn-top{
+  display:flex; align-items:center; justify-content:space-between; gap:10px;
+  padding:12px 14px; border-radius:16px; margin:4px 0 2px;
+  background:linear-gradient(135deg, rgba(145,70,255,.22), rgba(77,227,255,.1));
+  border:1px solid rgba(145,70,255,.35);
+}
+.et-bal{ display:flex; align-items:baseline; gap:5px; }
+.et-bal span{ font-size:22px; font-weight:900; letter-spacing:-.4px; font-variant-numeric:tabular-nums; }
+.et-bal small{ font-size:10px; color:#b9b4d0; font-weight:700; letter-spacing:.5px; }
+.et-rates{ display:flex; flex-direction:column; gap:2px; font-size:10.5px; color:#c9c4de; text-align:right; }
+.et-rates b{ color:#fff; font-variant-numeric:tabular-nums; }
+.gift-row{ display:flex; gap:8px; margin:2px 0 8px; }
+.gift{
+  flex:1 1 0; display:flex; flex-direction:column; align-items:center; gap:3px;
+  padding:10px 6px; border-radius:12px;
+  background:linear-gradient(180deg, rgba(255,205,74,.18), rgba(255,205,74,.05));
+  border:1px solid rgba(255,205,74,.45); color:#ffe6a3;
+  transition:transform .12s ease, filter .2s;
+}
+.gift b{ font-size:16px; color:#fff; letter-spacing:.3px; }
+.gift span{ font-size:10px; font-weight:800; font-variant-numeric:tabular-nums; }
+.gift:active{ transform:scale(.96); }
+.gift.off{ opacity:.4; filter:grayscale(.4); }
+.gift-note{ font-size:10px; line-height:1.45; color:#a7a2be; padding:0 2px 4px; }
+.gift-note b{ color:#ffd77a; }
+.days-current{ font-size:10.5px; color:#adadb8; margin:-2px 2px 8px; }
+#camBoost{ color:#9dffce; }
 </style>
 </head>
 <body>
@@ -854,23 +1042,19 @@ main{
 <div id="app">
 
   <!-- ================= TOP BAR ================= -->
-  <header class="topbar">
-    <div class="avatar"><span>🌸</span></div>
-    <div class="channel">
-      <div class="name">
-        <span id="chName">mika_live</span>
-        <span class="live-badge"><i></i>LIVE</span>
-      </div>
-      <div class="meta">
-        <span class="vw">👤 <b id="viewerCount">12</b></span>
-        <span class="sep">·</span>
-        <span><b id="subCount">0</b> сабов</span>
-      </div>
+  <!-- ================= COMPACT STATUS BAR ================= -->
+  <header class="topbar statusbar" id="statusbar">
+    <div class="avatar" id="liveAvatar"><span>🌸</span></div>
+    <div class="sb-id">
+      <b id="chName">mika_live</b>
+      <span class="live-badge"><i></i>LIVE</span>
     </div>
-    <button class="icon-btn" id="muteBtn" aria-label="Звук">🔊</button>
-    <button class="icon-btn" aria-label="Поделиться">⤴</button>
-    <button class="icon-btn gear-btn" id="gearBtn" type="button" aria-label="Админ-панель" title="Админ-панель">⚙︎</button>
+    <span class="sb-viewers">👤 <b id="viewerCount">1 420</b></span>
+    <span class="sb-goal">🎯 <b id="goalNow">0</b><i id="goalMax">/100</i></span>
     <div class="balance"><span class="coin"></span><span id="bitsCount">0</span></div>
+    <button class="icon-btn" id="muteBtn" aria-label="Звук">🔊</button>
+    <button class="icon-btn gear-btn" id="gearBtn" type="button" aria-label="Админ-панель" title="Админ-панель">⚙︎</button>
+    <i class="goal-line"><i id="barFill"></i></i>
   </header>
 
   <!-- ================= DONATION TICKER ================= -->
@@ -880,371 +1064,82 @@ main{
 
   <main>
 
-    <!-- ================= TAB: STREAM ================= -->
+    <!-- ================= TAB: STREAM (heroine-first) ================= -->
     <section class="tab-panel active" id="tab-stream">
-      <div class="stage-wrap">
-        <div class="scene" id="scene">
+      <div class="hero" id="scene">
+        <img class="art-bg" id="artBg" alt="" aria-hidden="true" />
+        <div class="hero-glow" aria-hidden="true"></div>
+        <div class="hero-chair" aria-hidden="true"></div>
+        <div class="hero-mic" aria-hidden="true"></div>
 
-          <!-- ROOM (upgrade-able layers) -->
-          <svg class="room-svg" viewBox="0 0 300 560" preserveAspectRatio="xMidYMax meet" aria-hidden="true">
-            <defs>
-              <linearGradient id="gWall" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0" stop-color="#2a1f3f"/><stop offset="1" stop-color="#0f0d18"/>
-              </linearGradient>
-              <radialGradient id="gGlow" cx="50%" cy="18%" r="60%">
-                <stop offset="0" stop-color="#9146FF" stop-opacity=".55"/>
-                <stop offset="1" stop-color="#9146FF" stop-opacity="0"/>
-              </radialGradient>
-              <linearGradient id="gDesk" x1="0" y1="0" x2="1" y2="0">
-                <stop offset="0" stop-color="#241d33"/><stop offset=".5" stop-color="#332846"/><stop offset="1" stop-color="#1b1626"/>
-              </linearGradient>
-              <linearGradient id="gNeon" x1="0" y1="0" x2="1" y2="0">
-                <stop offset="0" stop-color="#4de3ff"/><stop offset="1" stop-color="#9146FF"/>
-              </linearGradient>
-            </defs>
-
-            <rect width="300" height="560" fill="url(#gWall)"/>
-            <rect width="300" height="560" fill="url(#gGlow)"/>
-
-            <!-- poster frames (no text ever) -->
-            <g opacity=".9">
-              <rect x="24" y="118" width="46" height="58" rx="4" fill="#241c33" stroke="#3a2f52"/>
-              <rect x="29" y="123" width="36" height="48" rx="2" fill="#2d2440"/>
-              <circle cx="47" cy="141" r="11" fill="url(#gNeon)" opacity=".45"/>
-              <path d="M33 168 l12 -16 l10 12 l8 -8 v9 z" fill="#3d3158"/>
-            </g>
-            <g opacity=".9">
-              <rect x="234" y="148" width="42" height="54" rx="4" fill="#241c33" stroke="#3a2f52"/>
-              <rect x="239" y="153" width="32" height="44" rx="2" fill="#2d2440"/>
-              <path d="M247 188 q12 -30 16 -2 q2 12 8 3" fill="none" stroke="#b98bff" stroke-width="2" opacity=".6"/>
-            </g>
-
-            <!-- fairy lights (light lvl 1) -->
-            <g id="light-1" class="u">
-              <path d="M0 60 Q75 92 150 62 T300 66" fill="none" stroke="#3a3350" stroke-width="1"/>
-              <circle cx="26" cy="74" r="2.6" fill="#ffd98a"/><circle cx="58" cy="86" r="2.6" fill="#ffb3d9"/>
-              <circle cx="92" cy="84" r="2.6" fill="#ffd98a"/><circle cx="126" cy="72" r="2.6" fill="#a9e7ff"/>
-              <circle cx="160" cy="64" r="2.6" fill="#ffd98a"/><circle cx="196" cy="64" r="2.6" fill="#ffb3d9"/>
-              <circle cx="232" cy="68" r="2.6" fill="#ffd98a"/><circle cx="268" cy="66" r="2.6" fill="#a9e7ff"/>
-              <g opacity=".5">
-                <circle cx="26" cy="74" r="7" fill="#ffd98a" opacity=".18"/>
-                <circle cx="92" cy="84" r="7" fill="#ffd98a" opacity=".18"/>
-                <circle cx="160" cy="64" r="7" fill="#ffd98a" opacity=".18"/>
-                <circle cx="232" cy="68" r="7" fill="#ffd98a" opacity=".18"/>
-              </g>
-            </g>
-
-            <!-- RGB softbox (light lvl 2) -->
-            <g id="light-2" class="u">
-              <rect x="18" y="96" width="30" height="80" rx="6" fill="#1a1626" stroke="#4de3ff" stroke-opacity=".6"/>
-              <rect x="22" y="100" width="22" height="72" rx="4" fill="url(#gNeon)" opacity=".55"/>
-              <rect x="252" y="110" width="30" height="80" rx="6" fill="#1a1626" stroke="#9146FF" stroke-opacity=".6"/>
-              <rect x="256" y="114" width="22" height="72" rx="4" fill="#9146FF" opacity=".5"/>
-              <rect id="light-soak" width="300" height="560" fill="url(#gNeon)" opacity=".07"/>
-            </g>
-
-            <!-- chair tier 0: plain office chair -->
-            <g id="chair-0" class="u" opacity="1">
-              <rect x="92" y="228" width="116" height="112" rx="20" fill="#1d1a28" stroke="#2e283d"/>
-              <rect x="146" y="332" width="8" height="60" fill="#262233"/>
-              <path d="M120 392 L180 392 L172 402 L128 402 Z" fill="#262233"/>
-            </g>
-            <!-- chair tier 1: pink gamer chair with ears -->
-            <g id="chair-1" class="u">
-              <path d="M86 200 q0 -18 18 -18 h92 q18 0 18 18 v146 q0 18 -18 18 h-92 q-18 0 -18 -18 z" fill="#ff8ad1" stroke="#ffb3e2" stroke-opacity=".7"/>
-              <path d="M94 208 q0 -12 12 -12 h88 q12 0 12 12 v128 q0 12 -12 12 h-88 q-12 0 -12 -12 z" fill="#ff9ddb"/>
-              <rect x="128" y="224" width="44" height="14" rx="7" fill="#ffd1ec" opacity=".55"/>
-              <circle cx="90" cy="196" r="15" fill="#ff8ad1" stroke="#ffc4e6" stroke-opacity=".7"/>
-              <circle cx="210" cy="196" r="15" fill="#ff8ad1" stroke="#ffc4e6" stroke-opacity=".7"/>
-              <rect x="146" y="344" width="8" height="52" fill="#c95c9e"/>
-              <path d="M120 396 L180 396 L172 406 L128 406 Z" fill="#c95c9e"/>
-            </g>
-            <!-- chair tier 2: leather throne -->
-            <g id="chair-2" class="u">
-              <path d="M78 188 q0 -20 20 -20 h104 q20 0 20 20 v160 q0 20 -20 20 h-104 q-20 0 -20 -20 z" fill="#171018" stroke="#8a6230" stroke-width="1.4"/>
-              <path d="M88 198 q0 -14 14 -14 h96 q14 0 14 14 v142 q0 14 -14 14 h-96 q-14 0 -14 -14 z" fill="#241a24"/>
-              <path d="M120 222 v104 M180 222 v104" stroke="#8a6230" stroke-opacity=".5" stroke-dasharray="3 5"/>
-              <circle cx="86" cy="184" r="17" fill="#241a24" stroke="#8a6230"/>
-              <circle cx="214" cy="184" r="17" fill="#241a24" stroke="#8a6230"/>
-              <rect x="144" y="356" width="12" height="46" fill="#8a6230" opacity=".7"/>
-              <path d="M114 402 L186 402 L176 414 L124 414 Z" fill="#8a6230" opacity=".55"/>
-            </g>
-
-
-
-            <!-- camera indicator / 4k -->
-            <g id="cam-hd" class="u">
-              <rect x="12" y="24" width="58" height="6" rx="3" fill="#4de3ff" opacity=".22"/>
-            </g>
-          </svg>
-
-          <!-- CHARACTER (placeholder manhwa art slot) -->
-          <svg class="char-svg" id="char" viewBox="0 0 300 560" preserveAspectRatio="xMidYMax meet"
-               data-mood="1" role="img" aria-label="Стримерша в студии">
-            <defs>
-              <linearGradient id="gSkin" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0" stop-color="#ffe4d3"/><stop offset="1" stop-color="#f4bda6"/>
-              </linearGradient>
-              <linearGradient id="gSkinShade" x1="0" y1="0" x2="1" y2="0">
-                <stop offset="0" stop-color="#e0a08a" stop-opacity=".55"/><stop offset="1" stop-color="#e0a08a" stop-opacity="0"/>
-              </linearGradient>
-              <linearGradient id="gHair" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0" stop-color="#41305a"/><stop offset=".55" stop-color="#2b1f3d"/><stop offset="1" stop-color="#1b1326"/>
-              </linearGradient>
-              <linearGradient id="gTop" x1="0" y1="0" x2="0.4" y2="1">
-                <stop offset="0" style="stop-color:var(--accent-1)"/>
-                <stop offset="1" style="stop-color:var(--accent-2)"/>
-              </linearGradient>
-              <linearGradient id="gOuter" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0" stop-color="#fbf7f2"/><stop offset="1" stop-color="#ded4cb"/>
-              </linearGradient>
-              <linearGradient id="gLeg" x1="0" y1="0" x2="1" y2="0">
-                <stop offset="0" stop-color="#eeb49b"/><stop offset=".55" stop-color="#ffdccb"/><stop offset="1" stop-color="#e7a992"/>
-              </linearGradient>
-              <linearGradient id="gRim" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0" stop-color="#ffffff" stop-opacity=".85"/>
-                <stop offset="1" stop-color="#ffffff" stop-opacity=".1"/>
-              </linearGradient>
-            </defs>
-
-            <!-- floor shadow -->
-            <ellipse cx="150" cy="552" rx="84" ry="12" fill="#000" opacity=".3"/>
-
-            <g transform="translate(150 62) scale(1.15) translate(-150 -62)">
-            <g class="body">
-
-              <!-- hair: back mass -->
-              <path id="hair-long" d="M150 60 c-31 0 -48 24 -48 53 c0 25 2 46 5 65 c3 15 5 28 3 41 c-1 7 7 11 13 5 c7 -7 17 -11 27 -11 c10 0 20 4 27 11 c6 6 14 2 13 -5 c-2 -13 0 -26 3 -41 c3 -19 5 -40 5 -65 c0 -29 -17 -53 -48 -53 z" fill="url(#gHair)"/>
-
-              <!-- legs -->
-              <path d="M118 284 C111 330 113 382 119 432 C122 462 124 506 125 560 L149 560 C149 508 150 462 150 424 C150 384 149 334 148 284 Z" fill="url(#gLeg)"/>
-              <path d="M182 284 C189 330 187 382 181 432 C178 462 176 506 175 560 L151 560 C151 508 150 462 150 424 C150 384 151 334 152 284 Z" fill="url(#gLeg)"/>
-              <path d="M150 288 C150 340 150 392 150 424 C150 462 150 508 150 560 L154 560 C154 508 155 462 155 424 C155 388 154 334 153 288 Z" fill="#000" opacity=".08"/>
-              <path d="M126 300 C121 340 122 384 126 420 C130 452 131 506 131 560 L136 560 C136 500 135 448 132 414 C129 380 129 336 133 300 Z" fill="#fff" opacity=".18"/>
-
-              <!-- skirt / shorts -->
-              <path id="skirt" d="M108 246 q42 -9 84 0 l10 48 q-52 10 -104 0 z" fill="#2b2338"/>
-              <path id="shorts" d="M110 246 q40 -8 80 0 l6 32 q-20 7 -46 7 q-26 0 -46 -7 z" fill="#2b2338"/>
-
-              <!-- torso: fitted top -->
-              <path d="M150 144 c-19 0 -33 6 -39 17 c-5 9 -7 21 -6 33 c1 16 4 34 6 50 c1 8 2 15 2 21 h74 c0 -6 1 -13 2 -21 c2 -16 5 -34 6 -50 c1 -12 -1 -24 -6 -33 c-6 -11 -20 -17 -39 -17 z" fill="url(#gTop)"/>
-              <path d="M150 144 c-19 0 -33 6 -39 17 c-5 9 -7 21 -6 33 c1 16 4 34 6 50 c1 8 2 15 2 21 h74 c0 -6 1 -13 2 -21 c2 -16 5 -34 6 -50 c1 -12 -1 -24 -6 -33 c-6 -11 -20 -17 -39 -17 z" fill="url(#gSkinShade)" opacity=".18"/>
-              <!-- collar -->
-              <path d="M133 146 q17 12 34 0 l-3 7 q-14 9 -28 0 z" fill="#000" opacity=".22"/>
-
-              <!-- neck -->
-              <path d="M141 122 h18 v20 q-9 7 -18 0 z" fill="#eab094"/>
-              <path d="M141 126 q9 8 18 0 v6 q-9 8 -18 0 z" fill="#cf8d72" opacity=".55"/>
-
-              <!-- ===== LEFT ARM ===== -->
-              <g class="arm-l">
-                <circle cx="115" cy="162" r="12" fill="url(#gSkin)"/>
-                <path d="M115 158 c-9 5 -12 17 -12 31 c0 19 1 35 3 47 c1 8 4 12 9 12 c5 0 9 -4 9 -12 c0 -14 0 -30 1 -44 c1 -14 3 -24 7 -30 z" fill="url(#gSkin)"/>
-                <ellipse cx="112" cy="254" rx="7.5" ry="9.5" fill="#ffd9c7"/>
-                <g class="sleeve">
-                  <circle cx="115" cy="162" r="11.5" fill="url(#gOuter)"/>
-                  <path d="M116 157 c-9 5 -13 18 -13 33 c0 20 1 37 3 49 c1 9 4 14 10 14 c6 0 10 -5 10 -14 c0 -14 0 -31 1 -45 c1 -15 3 -26 7 -33 z" fill="url(#gOuter)" stroke="#d6ccc3" stroke-width=".9"/>
-                  <path d="M107 196 q6 4 12 0" fill="none" stroke="#c3b8ae" stroke-width="1"/>
-                </g>
-              </g>
-
-              <!-- ===== RIGHT ARM ===== -->
-              <g class="arm-r">
-                <circle cx="185" cy="162" r="12" fill="url(#gSkin)"/>
-                <path d="M185 158 c9 5 12 17 12 31 c0 19 -1 35 -3 47 c-1 8 -4 12 -9 12 c-5 0 -9 -4 -9 -12 c0 -14 0 -30 -1 -44 c-1 -14 -3 -24 -7 -30 z" fill="url(#gSkin)"/>
-                <ellipse cx="188" cy="254" rx="7.5" ry="9.5" fill="#ffd9c7"/>
-                <g class="sleeve">
-                  <circle cx="185" cy="162" r="11.5" fill="url(#gOuter)"/>
-                  <path d="M184 157 c9 5 13 18 13 33 c0 20 -1 37 -3 49 c-1 9 -4 14 -10 14 c-6 0 -10 -5 -10 -14 c0 -14 0 -31 -1 -45 c-1 -15 -3 -26 -7 -33 z" fill="url(#gOuter)" stroke="#d6ccc3" stroke-width=".9"/>
-                  <path d="M193 196 q-6 4 -12 0" fill="none" stroke="#c3b8ae" stroke-width="1"/>
-                </g>
-              </g>
-
-              <!-- outer layer: oversized cardigan -->
-              <g id="outer">
-                <path d="M150 142 c-22 0 -37 8 -44 20 c-4 8 -6 20 -6 32 c0 12 2 24 3 34 c1 8 2 14 2 20 l14 -4 c-1 -14 -3 -30 -3 -44 c0 -12 1 -22 4 -28 c4 -7 14 -12 30 -12 c16 0 26 5 30 12 c3 6 4 16 4 28 c0 14 -2 30 -3 44 l14 4 c0 -6 1 -12 2 -20 c1 -10 3 -22 3 -34 c0 -12 -2 -24 -6 -32 c-7 -12 -22 -20 -44 -20 z" fill="url(#gOuter)"/>
-                <path d="M150 142 c-22 0 -37 8 -44 20 c-4 8 -6 20 -6 32 c0 12 2 24 3 34 c1 8 2 14 2 20 l16 -4 c-1 -16 -3 -34 -3 -50 c0 -12 2 -22 6 -28 z" fill="#ffffff" opacity=".55"/>
-                <path d="M150 142 q-13 24 -15 50 q-2 -28 5 -50 z" fill="#cfc5bb" opacity=".8"/>
-                <path d="M120 150 q30 12 60 0" fill="none" stroke="#c9beb4" stroke-width="1.2" opacity=".6"/>
-              </g>
-
-              <!-- head -->
-              <path d="M150 68 c-18 0 -29 13 -29 31 c0 20 12 34 29 34 c17 0 29 -14 29 -34 c0 -18 -11 -31 -29 -31 z" fill="url(#gSkin)"/>
-              <path d="M150 68 c-18 0 -29 13 -29 31 c0 20 12 34 29 34 c6 0 11 -2 16 -6 c-14 -3 -23 -16 -23 -33 c0 -14 6 -26 16 -32 c-3 -1 -6 -1 -9 -1 z" fill="#ffd2c0" opacity=".45"/>
-              <ellipse cx="121" cy="100" rx="5" ry="7" fill="#f2b59c"/>
-              <ellipse cx="179" cy="100" rx="5" ry="7" fill="#f2b59c"/>
-
-              <!-- bangs -->
-              <path d="M150 62 c-31 0 -47 21 -47 47 c0 7 1 13 3 17 c1 -17 8 -29 19 -33 c-2 10 0 18 4 22 c0 -15 6 -25 17 -29 c-2 12 1 21 7 25 c-2 -15 5 -25 16 -27 c11 -2 19 4 21 15 c1 -7 1 -13 0 -18 c-3 -25 -19 -46 -40 -46 z" fill="url(#gHair)"/>
-              <path d="M116 96 c-2 22 0 44 5 62 c-9 -18 -12 -44 -5 -62 z" fill="url(#gHair)"/>
-              <path d="M184 96 c2 22 0 44 -5 62 c9 -18 12 -44 5 -62 z" fill="url(#gHair)"/>
-
-              <!-- face: mood 1 -->
-              <g class="face f-shy">
-                <path d="M131 98 q8 5 15 -1" fill="none" stroke="#2b1f3d" stroke-width="2.8" stroke-linecap="round"/>
-                <path d="M154 97 q8 6 15 1" fill="none" stroke="#2b1f3d" stroke-width="2.8" stroke-linecap="round"/>
-                <path d="M144 115 q6 4 12 0" fill="none" stroke="#c1735f" stroke-width="2" stroke-linecap="round"/>
-              </g>
-              <!-- mood 2 -->
-              <g class="face f-soft">
-                <ellipse cx="138" cy="98" rx="7" ry="6" fill="#2b1f3d"/>
-                <ellipse cx="162" cy="98" rx="7" ry="6" fill="#2b1f3d"/>
-                <circle cx="140" cy="96" r="1.9" fill="#fff"/>
-                <circle cx="164" cy="96" r="1.9" fill="#fff"/>
-                <path d="M144 116 q6 5 12 -1" fill="none" stroke="#c1735f" stroke-width="2" stroke-linecap="round"/>
-              </g>
-              <!-- mood 3 -->
-              <g class="face f-open">
-                <ellipse cx="138" cy="98" rx="7.5" ry="7" fill="#2b1f3d"/>
-                <ellipse cx="162" cy="98" rx="7.5" ry="7" fill="#2b1f3d"/>
-                <circle cx="140.5" cy="95.5" r="2.2" fill="#fff"/>
-                <circle cx="164.5" cy="95.5" r="2.2" fill="#fff"/>
-                <path d="M130 88 q8 -5 16 1" fill="none" stroke="#3d2d54" stroke-width="1.6" stroke-linecap="round"/>
-                <path d="M154 89 q8 -6 16 -1" fill="none" stroke="#3d2d54" stroke-width="1.6" stroke-linecap="round"/>
-                <path d="M143 115 q7 8 14 0 q-7 4 -14 0 z" fill="#c1735f"/>
-              </g>
-              <!-- mood 4 -->
-              <g class="face f-star">
-                <path d="M130 100 q8 -9 16 0 q-8 8 -16 0 z" fill="#2b1f3d"/>
-                <path d="M154 100 q8 -9 16 0 q-8 8 -16 0 z" fill="#2b1f3d"/>
-                <circle cx="138" cy="97" r="1.7" fill="#fff"/>
-                <circle cx="162" cy="97" r="1.7" fill="#fff"/>
-                <path d="M142 114 q8 9 16 0" fill="none" stroke="#c1735f" stroke-width="2.2" stroke-linecap="round"/>
-              </g>
-
-              <!-- blush -->
-              <g class="blush">
-                <ellipse cx="128" cy="108" rx="9" ry="5" fill="#ff8fa3" opacity=".85"/>
-                <ellipse cx="172" cy="108" rx="9" ry="5" fill="#ff8fa3" opacity=".85"/>
-              </g>
-
-              <!-- rim light -->
-              <path d="M182 76 c6 16 7 34 4 50 c-3 15 -7 26 -7 38" fill="none" stroke="url(#gRim)" stroke-width="2.4" stroke-linecap="round" opacity=".75"/>
-              <path d="M188 150 c3 12 4 26 3 40" fill="none" stroke="url(#gRim)" stroke-width="1.8" stroke-linecap="round" opacity=".5"/>
-            </g>
-            </g>
-          </svg>
-
-          <!-- ===== FOREGROUND: desk + gear (drawn over the character) ===== -->
-          <svg class="fore-svg" viewBox="0 0 300 560" preserveAspectRatio="xMidYMax meet" aria-hidden="true">
-            <defs>
-              <linearGradient id="gDesk2" x1="0" y1="0" x2="1" y2="0">
-                <stop offset="0" stop-color="#1b1527"/><stop offset=".5" stop-color="#2b2240"/><stop offset="1" stop-color="#161021"/>
-              </linearGradient>
-              <linearGradient id="gScreen" x1="0" y1="0" x2="1" y2="1">
-                <stop offset="0" style="stop-color:var(--accent-2)"/><stop offset="1" style="stop-color:var(--accent-1)"/>
-              </linearGradient>
-              <linearGradient id="gSteam" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0" stop-color="#ffffff" stop-opacity=".55"/>
-                <stop offset="1" stop-color="#ffffff" stop-opacity="0"/>
-              </linearGradient>
-            </defs>
-
-            <!-- desk surface -->
-            <path d="M0 402 L300 402 L300 560 L0 560 Z" fill="url(#gDesk2)"/>
-            <rect x="0" y="402" width="300" height="3.6" fill="#4de3ff" opacity=".22"/>
-            <rect x="0" y="402" width="300" height="1.4" fill="#b98bff" opacity=".7"/>
-            <path d="M0 408 L300 408 L300 414 L0 414 Z" fill="#000" opacity=".28"/>
-
-            <!-- open laptop (left) -->
-            <g>
-              <path d="M22 330 h60 q4 0 4 4 v58 h-68 v-58 q0 -4 4 -4 z" fill="#120d1c" stroke="#3a2f52" stroke-width="1.2"/>
-              <path d="M26 336 h56 v50 h-56 z" fill="url(#gScreen)" opacity=".4"/>
-              <path d="M26 336 h56 v50 h-56 z" fill="none" stroke="#6a5a8f" stroke-width=".6" opacity=".5"/>
-              <path d="M18 392 h72 l8 10 h-88 z" fill="#231a35" stroke="#3a2f52"/>
-              <circle cx="54" cy="397" r="2" fill="#4de3ff" opacity=".7"/>
-            </g>
-
-            <!-- mug (right) -->
-            <g>
-              <rect x="243" y="368" width="26" height="32" rx="6" fill="#2a2138" stroke="#453758"/>
-              <path d="M269 376 q10 5 0 15" fill="none" stroke="#453758" stroke-width="3"/>
-              <rect x="243" y="368" width="26" height="6" rx="3" fill="#3a2f4f"/>
-              <path d="M250 364 q6 -8 0 -16 M258 364 q6 -8 0 -16" fill="none" stroke="url(#gSteam)" stroke-width="2.4" stroke-linecap="round"/>
-            </g>
-
-            <!-- mic tier 0 -->
-            <g id="mic-0" class="u" opacity="1">
-              <path d="M198 400 q-16 -10 -12 -26" fill="none" stroke="#4a4159" stroke-width="3.2" stroke-linecap="round"/>
-              <circle cx="186" cy="372" r="5.5" fill="#3a3348" stroke="#5a4f70"/>
-            </g>
-            <!-- mic tier 1 -->
-            <g id="mic-1" class="u">
-              <rect x="196" y="352" width="4" height="50" fill="#3c3450"/>
-              <rect x="194" y="398" width="8" height="4" rx="2" fill="#2a2440"/>
-              <ellipse cx="198" cy="348" rx="9" ry="7" fill="#5b4d78"/>
-              <ellipse cx="198" cy="346" rx="5" ry="3.5" fill="#7a6b9c"/>
-            </g>
-            <!-- mic tier 2 -->
-            <g id="mic-2" class="u">
-              <path d="M300 402 L268 384 L232 356" fill="none" stroke="#5a4d76" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
-              <path d="M232 356 L214 340" fill="none" stroke="#5a4d76" stroke-width="4" stroke-linecap="round"/>
-              <rect x="196" y="318" width="20" height="30" rx="9" fill="#241d34" stroke="#b98bff" stroke-width="1.4"/>
-              <rect x="200" y="323" width="12" height="20" rx="6" fill="#4de3ff" opacity=".6"/>
-              <circle cx="206" cy="333" r="17" fill="#9146FF" opacity=".2"/>
-              <rect x="203" y="348" width="6" height="10" fill="#3a2f52"/>
-            </g>
-          </svg>
-
-          <!-- ART LAYERS: blurred backdrop + fully visible camera frame -->
-          <img class="art-bg" id="artBg" alt="" aria-hidden="true" />
-          <div class="art-lean" id="artLean">
-            <div class="art-tap" id="artTap">
-              <img class="art-img" id="artImg" alt="" />
-            </div>
+        <div class="art-lean" id="artLean">
+          <div class="art-tap" id="artTap">
+            <img class="art-img" id="artImg" alt="" />
           </div>
-
-          <!-- particles -->
-          <canvas id="fx"></canvas>
-          <div class="flash" id="flash"></div>
-
-          <!-- glass sub-goal pill, pinned above the camera frame -->
-          <div class="subgoal">
-            <div class="sg-row">
-              <span class="sg-live"><i></i>LIVE</span>
-              <span class="sg-viewers">👤 <b id="viewersPill">12</b></span>
-              <span class="sg-spacer"></span>
-              <span class="sg-label">Саб-гол</span>
-              <b class="sg-count"><span id="goalNow">0</span>/<span id="goalMax">100</span></b>
-            </div>
-            <div class="sg-bar"><i id="barFill"></i></div>
-            <div class="sg-foot">
-              <span class="sg-title">«<span id="goalText">Снять кофту на плечи 💕</span>»</span>
-              <span class="sg-right">
-                <span id="dayLabel">День 1</span>
-                <span class="stage-dots" id="stageDots"></span>
-              </span>
-            </div>
-          </div>
-
-          <div id="fpsBadge">60 FPS</div>
         </div>
-      </div>
 
-      <!-- pinned stream goal, then the live chat feed -->
-      <div class="chat-pin">
-        <span class="pin-ic">📌</span>
-        <span id="stageTitle">Стеснительный старт</span>
-        <span class="pin-sep">·</span>
-        <span id="stageSub">«Ой... Спасибо за первый донат! Чат, только не смотрите так пристально, мне неловко...»</span>
-      </div>
-      <div class="chatfeed" id="peek"></div>
+        <canvas id="fx"></canvas>
+        <div class="flash" id="flash"></div>
+        <div class="cam-tag" aria-hidden="true">4K</div>
 
-      <!-- compose bar -->
-      <div class="compose">
-        <button class="cmp-emoji" type="button" aria-label="Смайлики">😊</button>
-        <div class="cmp-input">Отправить сообщение…</div>
-        <button class="cmp-bits" type="button" aria-label="Битсы">💎 Битсы</button>
+        <!-- floating glass chat overlay -->
+        <div class="live-chat" id="liveChat">
+          <div class="lc-goal">🎯 <span id="goalText">Снять кофту на плечи 💕</span></div>
+          <div class="lc-feed" id="peek"></div>
+          <div class="lc-foot">👤 <b id="viewersPill">1 420</b> · <b id="chatOnline">1 420</b> онлайн</div>
+        </div>
+
+        <div id="fpsBadge">60 FPS</div>
       </div>
     </section>
 
-    <!-- ================= TAB: CHAT ================= -->
-    <section class="tab-panel" id="tab-chat">
-      <div class="chat-head">
-        <span><b>Живой чат</b> · <span id="chatOnline">12</span> онлайн</span>
-        <span id="chatBadgeInfo">модеры на посту</span>
+    <!-- ================= TAB: EARNINGS ================= -->
+    <section class="tab-panel" id="tab-earn">
+      <div class="earn-scroll" id="earnScroll">
+        <div class="earn-top">
+          <div class="et-bal"><span id="earnBits">0</span><small>bits</small></div>
+          <div class="et-rates">
+            <span>👆 <b id="earnPerTap">1</b> / тап</span>
+            <span>⏱ <b id="earnPerSec">0</b> / сек</span>
+          </div>
+        </div>
+
+        <div class="section-title"><span>Клик</span><b>+bits за тап</b></div>
+        <div id="clickList"></div>
+
+        <div class="section-title"><span>Пассивный доход</span><b>bits / сек</b></div>
+        <div id="passiveList"></div>
+
+        <div class="section-title"><span>Подарить сабки</span><b id="subCount">0</b></div>
+        <div class="gift-row">
+          <button class="gift" type="button" data-gift="1"><b>×1</b><span>💎 250</span></button>
+          <button class="gift" type="button" data-gift="5"><b>×5</b><span>💎 1 100</span></button>
+          <button class="gift" type="button" data-gift="10"><b>×10</b><span>💎 2 000</span></button>
+        </div>
+        <div class="gift-note">
+          Каждая сабка капает сама: <b>+0.06</b> к саб-голу в секунду ·
+          подарено <b id="earnGiftSubs">0</b> · сейчас <b id="giftRate">0</b> саб-гола/сек
+        </div>
+
+        <div class="section-title"><span>Текущая цель</span><b>саб-гол дня</b></div>
+        <div class="card">
+          <div class="card-icon">🎯</div>
+          <div class="card-body">
+            <div class="n" id="stageTitle">Застенчивый старт</div>
+            <div class="t" id="stageSub">«…»</div>
+            <div class="pips stage-dots" id="stageDots"></div>
+          </div>
+        </div>
+
+        <div class="section-title"><span>Итого</span><b>пассив</b></div>
+        <div class="card">
+          <div class="card-icon">📈</div>
+          <div class="card-body">
+            <div class="n">Текущий пассив</div>
+            <div class="t" id="passiveInfo">0.0 bits/сек · +0.00 саб-гола/сек</div>
+          </div>
+        </div>
       </div>
-      <div class="chat-list" id="chatFull"></div>
     </section>
 
     <!-- ================= TAB: SHOP ================= -->
@@ -1252,12 +1147,12 @@ main{
       <div class="shop-scroll" id="shopScroll">
         <div class="section-title"><span>Студия</span><b><span id="shopBits">0</span> bits</b></div>
         <div id="shopList"></div>
-        <div class="section-title"><span>Перки</span><b>пассив</b></div>
+        <div class="section-title"><span>Бонусы</span><b>к заработку</b></div>
         <div class="card">
-          <div class="card-icon">📈</div>
+          <div class="card-icon">📷</div>
           <div class="card-body">
-            <div class="n">Текущий пассив</div>
-            <div class="t" id="passiveInfo">0.0 bits/сек · +0.00% саб-гоала/сек</div>
+            <div class="n">Камера в кадре</div>
+            <div class="t" id="camBoost">Webcam 720p — без бонуса</div>
           </div>
         </div>
       </div>
@@ -1267,6 +1162,7 @@ main{
     <section class="tab-panel" id="tab-days">
       <div class="days-scroll" id="daysScroll">
         <div class="section-title"><span>Гардероб · дни</span><b id="loopLabel">сезон 1</b></div>
+        <div class="days-current"><span id="dayLabel">· День 1 · Уютный домашний стрим</span></div>
         <div id="daysList"></div>
         <div class="section-title"><span>Арт-слоты</span><b>замена в 1 клик</b></div>
         <div class="card" style="align-items:flex-start">
@@ -1292,9 +1188,9 @@ main{
       <svg viewBox="0 0 24 24"><rect x="2.5" y="4.5" width="19" height="15" rx="3"/><path d="M10 9.5l5 2.5-5 2.5z"/></svg>
       <span>Стрим</span><i class="dot-alert"></i>
     </button>
-    <button class="tab-btn" data-tab="chat" aria-label="Чат">
-      <svg viewBox="0 0 24 24"><path d="M20.5 12.5a7.5 7.5 0 0 1-10.9 6.7L4.5 20.5l1.4-4.9A7.5 7.5 0 1 1 20.5 12.5z"/></svg>
-      <span>Чат</span><i class="dot-alert"></i>
+    <button class="tab-btn" data-tab="earn" aria-label="Заработок">
+      <svg viewBox="0 0 24 24"><path d="M12 3.5l8 4.2v8.6L12 20.5 4 16.3V7.7z"/><path d="M9 10l3 2 3-2"/><path d="M12 12v5"/></svg>
+      <span>Заработок</span><i class="dot-alert"></i>
     </button>
     <button class="tab-btn" data-tab="shop" aria-label="Апгрейды">
       <svg viewBox="0 0 24 24"><path d="M4 8h16l-1.2 10.5a2 2 0 0 1-2 1.5H7.2a2 2 0 0 1-2-1.5L4 8z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/></svg>
@@ -1491,25 +1387,25 @@ const DAY_STAGES = [
 const UPGRADES = [
   {
     id: 'chair', icon: '🪑', name: 'Кресло',
-    tiers: ['Офисный стул', 'Геймерское кресло', 'Кожаный трон'],
+    tiers: ['Офисный стул', 'Розовое геймерское с ушками', 'Кожаный трон'],
     prices: [0, 450, 2600],
     effect: 'комфорт → рост зрителей'
   },
   {
     id: 'mic', icon: '🎙', name: 'Микрофон',
-    tiers: ['Гарнитура', 'Петличный', 'Студийный на пантографе'],
+    tiers: ['Петличка', 'Студийный HyperX', 'HyperX на пантографе'],
     prices: [0, 600, 3200],
-    effect: 'биты за тап → больше'
+    effect: 'чистый звук → больше зрителей'
   },
   {
-    id: 'light', icon: '💡', name: 'Свет',
-    tiers: ['Лампочка', 'Гирлянды', 'RGB-софтбокс'],
+    id: 'light', icon: '💡', name: 'Освещение',
+    tiers: ['Обычная лампа', 'Неоновые гирлянды', 'RGB-софтбоксы'],
     prices: [0, 800, 4200],
-    effect: 'атмосфера → пассив'
+    effect: 'атмосфера → пассив саб-гола'
   },
   {
     id: 'cam', icon: '📷', name: 'Камера',
-    tiers: ['480p', '1080p', '4K Ultra HD'],
+    tiers: ['Webcam 720p', '1080p Stream Cam', '4K Stream Cam'],
     prices: [0, 1000, 5200],
     effect: 'чёткость → пассив и онлайн'
   }
@@ -1576,6 +1472,17 @@ const STAGE_BURST = {
 /* ---------- STATE ---------- */
 const SAVE_KEY = 'neon_idol_save_v1';
 
+/* ---------- ECONOMY ---------- */
+const CLICK_UPS = [
+  { id: 'ad', icon: '📣', name: 'Реклама в чате', desc: '+2 bits за каждый тап', prices: [120, 1400, 12000, 90000] }
+];
+const PASSIVE_UPS = [
+  { id: 'raid', icon: '🛡', name: 'Рейд от другого стримера', desc: '+10 bits/сек', prices: [400, 3000, 22000, 150000] },
+  { id: 'sponsor', icon: '🤝', name: 'Спонсорский контракт', desc: '+50 bits/сек', prices: [2000, 14000, 95000, 600000] }
+];
+const GIFT_PACKS = [{ n: 1, price: 250 }, { n: 5, price: 1100 }, { n: 10, price: 2000 }];
+const GIFT_RATE = 0.06;          /* саб-гола в секунду за одну подаренную сабку */
+
 const state = {
   dayIndex: 0,
   loop: 1,
@@ -1588,8 +1495,13 @@ const state = {
   combo: 0,
   lastTapAt: 0,
   up: { chair: 0, mic: 0, light: 0, cam: 0 },
+  earn: { ad: 0, raid: 0, sponsor: 0 },
+  giftSubs: 0,
   dayRewardBits: 0
 };
+
+function camMult(){ return 1 + (state.up.cam || 0) * 0.25; }
+function bitsPerTap(){ return Math.round((1 + state.earn.ad * 2) * camMult()); }
 
 function goalTarget(){
   return 100 + state.dayIndex * 35 + (state.loop - 1) * 120;
@@ -1609,6 +1521,10 @@ const el = {
   goalNow: $('#goalNow'), goalMax: $('#goalMax'), fill: $('#barFill'),
   dots: $('#stageDots'), peek: $('#peek'), chatFull: $('#chatFull'),
   shopList: $('#shopList'), shopBits: $('#shopBits'), passiveInfo: $('#passiveInfo'),
+  earnBits: $('#earnBits'), earnPerTap: $('#earnPerTap'), earnPerSec: $('#earnPerSec'),
+  earnGiftSubs: $('#earnGiftSubs'), giftRate: $('#giftRate'),
+  clickList: $('#clickList'), passiveList: $('#passiveList'), earnScroll: $('#earnScroll'),
+  camTag: $('.cam-tag'), camBoost: $('#camBoost'), liveChat: $('#liveChat'),
   daysList: $('#daysList'), loopLabel: $('#loopLabel'),
   ticker: $('#tickerTrack'), toast: $('#toast'),
   modal: $('#modal'), mBits: $('#mBits'), mSubs: $('#mSubs'), mTaps: $('#mTaps'),
@@ -1757,6 +1673,11 @@ function msgNode(m){
     d.innerHTML = `<span class="m">${m.text}</span>`;
     return d;
   }
+  if (m.kind === 'gift'){
+    d.className = 'msg gift';
+    d.innerHTML = `<span class="m">👑 ${m.user.n} ${m.text}</span>`;
+    return d;
+  }
   const months = 1 + (m.user.n.length * 3 + m.user.n.charCodeAt(0)) % 11;
   const badge = m.user.b === 'mod' ? '<span class="badge mod"><i>🛡</i>MOD</span>'
     : m.user.b === 'vip' ? '<span class="badge vip">VIP</span>'
@@ -1767,17 +1688,20 @@ function msgNode(m){
 }
 
 function renderChat(){
-  // full list (last 34)
-  const slice = messages.slice(-34);
-  el.chatFull.innerHTML = '';
-  slice.forEach(m => el.chatFull.appendChild(msgNode(m)));
-  el.chatFull.scrollTop = el.chatFull.scrollHeight;
+  if (el.chatFull){
+    const slice = messages.slice(-34);
+    el.chatFull.innerHTML = '';
+    slice.forEach(m => el.chatFull.appendChild(msgNode(m)));
+    el.chatFull.scrollTop = el.chatFull.scrollHeight;
+  }
 
-  // live feed under the video (last 16, real Twitch rows with badges)
-  const feed = messages.slice(-16);
-  el.peek.innerHTML = '';
-  feed.forEach(m => el.peek.appendChild(msgNode(m)));
-  el.peek.scrollTop = el.peek.scrollHeight;
+  // floating overlay feed (last 14 rows, compact)
+  if (el.peek){
+    const feed = messages.slice(-14);
+    el.peek.innerHTML = '';
+    feed.forEach(m => el.peek.appendChild(msgNode(m)));
+    el.peek.scrollTop = el.peek.scrollHeight;
+  }
   peekDirty = false;
 }
 
@@ -2000,7 +1924,8 @@ function applyStage(stage, announce){
   const d = DAY_STAGES[state.dayIndex % DAY_STAGES.length];
   const s = d.stages[stage - 1];
 
-  el.char.setAttribute('data-mood', String(stage));
+  if (el.char) el.char.setAttribute('data-mood', String(stage));
+  el.scene.classList.toggle('stage-4', stage === 4);
   el.stageTitle.textContent = s.label;
   if (el.goalText) el.goalText.textContent = s.goal || s.note;
   el.stageSub.textContent = s.quote || s.note;
@@ -2068,18 +1993,28 @@ function renderHUD(){
   el.chatOnline.textContent = fmt(shown);
   el.subs.textContent = fmt(state.subs);
   el.goalNow.textContent = Math.floor(state.progress);
-  el.goalMax.textContent = Math.floor(goal);
+  el.goalMax.textContent = '/' + Math.floor(goal);
   el.fill.style.width = (ratio * 100).toFixed(2) + '%';
 
   const passive = passiveRate();
+  if (el.earnBits) el.earnBits.textContent = fmt(Math.floor(state.bits));
+  if (el.earnPerTap) el.earnPerTap.textContent = fmt(bitsPerTap());
+  if (el.earnPerSec) el.earnPerSec.textContent = fmt(Math.round(passive.bits * 10) / 10);
+  if (el.earnGiftSubs) el.earnGiftSubs.textContent = state.giftSubs;
+  if (el.giftRate) el.giftRate.textContent = (state.giftSubs * GIFT_RATE).toFixed(2);
+  if (el.camBoost) el.camBoost.textContent = state.up.cam
+    ? `${UPGRADES[3].tiers[state.up.cam]} — ×${camMult().toFixed(2)} к заработку`
+    : 'Webcam 720p — без бонуса';
+  if (el.camTag) el.camTag.textContent = state.up.cam ? UPGRADES[3].tiers[state.up.cam].split(' ')[0] : '';
+  if (el.subs) el.subs.textContent = fmt(state.subs);
   el.passiveInfo.textContent =
-    `${passive.bits.toFixed(1)} bits/сек · +${(passive.prog * 100).toFixed(2)}% саб-гоала/сек`;
+    `${passive.bits.toFixed(1)} bits/сек · +${passive.prog.toFixed(2)} саб-гола/сек`;
 }
 
 function passiveRate(){
-  const up = state.up;
-  const bits = state.viewers * 0.018 + up.cam * 0.55 + up.mic * 0.12;
-  const prog = 0.05 + up.cam * 0.05 + up.light * 0.045 + up.chair * 0.02 + state.viewers * 0.0009;
+  const e = state.earn;
+  const bits = (e.raid * 10 + e.sponsor * 50) * camMult();
+  const prog = 0.015 + state.giftSubs * GIFT_RATE + (state.up.light || 0) * 0.02;
   return { bits, prog };
 }
 
@@ -2119,6 +2054,76 @@ function renderShop(){
     el.shopList.appendChild(card);
   });
 }
+
+function renderEarn(){
+  const build = (list, items) => {
+    if (!list) return;
+    list.innerHTML = '';
+    items.forEach(u => {
+      const lvl = state.earn[u.id] || 0;
+      const maxed = lvl >= u.prices.length;
+      const price = maxed ? 0 : u.prices[lvl];
+      const afford = !maxed && state.bits >= price;
+      const card = document.createElement('div');
+      card.className = 'card' + (maxed ? ' maxed' : '');
+      card.innerHTML = `
+        <div class="card-icon">${u.icon}</div>
+        <div class="card-body">
+          <div class="n">${u.name}</div>
+          <div class="t">${lvl ? `ур. ${lvl} · ` : ''}${u.desc}</div>
+          <div class="pips">${u.prices.map((_, i) => `<i class="${i < lvl ? 'on' : ''}"></i>`).join('')}</div>
+        </div>
+        <button class="buy ${maxed ? 'max' : ''}" ${maxed || !afford ? 'disabled' : ''} data-buy="${u.id}">
+          ${maxed ? 'MAX' : `💎 ${fmt(price)}`}
+        </button>`;
+      list.appendChild(card);
+    });
+  };
+  build(el.clickList, CLICK_UPS);
+  build(el.passiveList, PASSIVE_UPS);
+
+  document.querySelectorAll('.gift').forEach(b => {
+    const pack = GIFT_PACKS.find(p => p.n === Number(b.dataset.gift));
+    if (pack) b.classList.toggle('off', state.bits < pack.price);
+  });
+}
+
+function buyBoost(id){
+  const u = CLICK_UPS.concat(PASSIVE_UPS).find(x => x.id === id);
+  if (!u) return;
+  const lvl = state.earn[id] || 0;
+  if (lvl >= u.prices.length) return;
+  const price = u.prices[lvl];
+  if (state.bits < price){ toast('Не хватает bits'); vibrate(30); return; }
+  state.bits -= price;
+  state.earn[id] = lvl + 1;
+  sfxDing(); motionTap(.8); vibrate([12, 26, 12]);
+  toast(`${u.name} · ур. ${lvl + 1}`);
+  spawn(W / 2, H / 2, 'burst');
+  renderEarn(); renderHUD(); save();
+}
+
+function buyGiftSubs(n){
+  const pack = GIFT_PACKS.find(p => p.n === n);
+  if (!pack) return;
+  if (state.bits < pack.price){ toast('Не хватает bits'); vibrate(30); return; }
+  state.bits -= pack.price;
+  state.giftSubs += n;
+  state.subs += n;
+  state.progress = clamp(state.progress + n * 1.2, 0, goalTarget());
+  pushMessage({ n: 'Игрок', c: '#ffd166', b: 'vip' }, `подарил ${n} платных подпис${n === 1 ? 'ку' : 'ок'}!`, 'gift');
+  sfxDing(); motionLean(1000); vibrate([16, 40, 16, 40, 26]);
+  toast(`👑 Подарено ${n} платных подписок!`);
+  spawn(W / 2, H * .5, 'burst');
+  checkStage(); renderHUD(); renderChat(); renderEarn(); save();
+}
+
+document.addEventListener('click', (e) => {
+  const buy = e.target.closest('[data-buy]');
+  if (buy){ audioInit(); buyBoost(buy.dataset.buy); return; }
+  const gift = e.target.closest('[data-gift]');
+  if (gift){ audioInit(); buyGiftSubs(Number(gift.dataset.gift)); }
+});
 
 function renderDays(){
   el.daysList.innerHTML = '';
@@ -2178,11 +2183,11 @@ function tapAt(x, y){
   state.lastTapAt = now;
 
   const mult = 1 + Math.floor(state.combo / 12) * 0.5;
-  const gain = Math.round((1 + state.up.mic * 2) * mult);
+  const gain = Math.round(bitsPerTap() * mult);
   state.bits += gain;
   state.totalBits += gain;
   state.taps++;
-  state.progress = clamp(state.progress + 0.55 + state.up.mic * 0.05, 0, goalTarget());
+  state.progress = clamp(state.progress + 0.22 + state.giftSubs * 0.004, 0, goalTarget());
   motionTap(0.35);
   if (state.combo >= 10) motionLean(1100);
 
@@ -2283,8 +2288,8 @@ el.shopList.addEventListener('click', (e) => {
 setInterval(() => {
   if (ADMIN.pausedSim) return;
   const p = passiveRate();
-  state.bits += p.bits;
-  state.totalBits += p.bits;
+  state.bits += p.bits * 0.25;
+  state.totalBits += p.bits * 0.25;
   state.progress = clamp(state.progress + p.prog * 0.25, 0, goalTarget());
 
   // viewers ease toward target
@@ -2310,8 +2315,11 @@ setInterval(() => {
   }
 }, 1250);
 
-// shop refresh
-setInterval(renderShop, 2000);
+// shop / earnings refresh
+setInterval(() => {
+  renderShop();
+  if ($('#tab-earn').classList.contains('active')) renderEarn();
+}, 2000);
 
 /* ==========================================================
    TAP WIRING
@@ -2358,7 +2366,7 @@ el.tabbar.addEventListener('click', (e) => {
   btn.classList.remove('alert');
   vibrate(8);
 
-  if (tab === 'chat'){ renderChat(); }
+  if (tab === 'earn'){ renderEarn(); renderHUD(); }
   if (tab === 'shop'){ renderShop(); renderHUD(); }
   if (tab === 'days'){ renderDays(); }
 });
@@ -2393,7 +2401,8 @@ function save(){
     localStorage.setItem(SAVE_KEY, JSON.stringify({
       dayIndex: state.dayIndex, loop: state.loop, progress: state.progress,
       bits: state.bits, totalBits: state.totalBits, taps: state.taps,
-      viewers: state.viewers, subs: state.subs, up: state.up, muted: muted
+      viewers: state.viewers, subs: state.subs, up: state.up,
+      earn: state.earn, giftSubs: state.giftSubs, muted: muted
     }));
   } catch(e){}
 }
@@ -2405,6 +2414,9 @@ function load(){
     const m = s.muted;
     delete s.muted;
     Object.assign(state, s);
+    state.up = Object.assign({ chair: 0, mic: 0, light: 0, cam: 0 }, state.up || {});
+    state.earn = Object.assign({ ad: 0, raid: 0, sponsor: 0 }, state.earn || {});
+    state.giftSubs = state.giftSubs || 0;
     state.progress = clamp(state.progress, 0, goalTarget());
     if (m){
       muted = true;
@@ -2426,6 +2438,7 @@ function boot(){
   applyDayTheme();
   renderDots();
   renderShop();
+  renderEarn();
   renderDays();
   renderHUD();
 
@@ -2589,6 +2602,12 @@ function admApplySnapshot(obj){
   ['dayIndex', 'loop', 'progress', 'bits', 'totalBits', 'taps', 'viewers', 'subs'].forEach(k => {
     if (typeof obj[k] === 'number' && isFinite(obj[k])) state[k] = obj[k];
   });
+  if (typeof obj.giftSubs === 'number') state.giftSubs = Math.max(0, Math.round(obj.giftSubs));
+  if (obj.earn && typeof obj.earn === 'object'){
+    ['ad', 'raid', 'sponsor'].forEach(k => {
+      if (typeof obj.earn[k] === 'number') state.earn[k] = clamp(Math.round(obj.earn[k]), 0, 4);
+    });
+  }
   if (obj.up && typeof obj.up === 'object'){
     UP_IDS.forEach(k => {
       if (typeof obj.up[k] === 'number') state.up[k] = clamp(Math.round(obj.up[k]), 0, 2);
@@ -2686,7 +2705,8 @@ if (admEl.root){
     admEl.json.value = JSON.stringify({
       dayIndex: state.dayIndex, loop: state.loop, progress: state.progress,
       bits: state.bits, totalBits: state.totalBits, taps: state.taps,
-      viewers: Math.round(state.viewers), subs: state.subs, up: state.up, muted
+      viewers: Math.round(state.viewers), subs: state.subs, up: state.up,
+      earn: state.earn, giftSubs: state.giftSubs, muted
     }, null, 2);
     admEl.json.select();
     try { if (navigator.clipboard) navigator.clipboard.writeText(admEl.json.value); } catch(e){}
@@ -2707,10 +2727,12 @@ if (admEl.root){
       viewers: 12, subs: 0, combo: 0, lastTapAt: 0, dayRewardBits: 0
     });
     state.up = { chair: 0, mic: 0, light: 0, cam: 0 };
+    state.earn = { ad: 0, raid: 0, sponsor: 0 };
+    state.giftSubs = 0;
     try { localStorage.removeItem(SAVE_KEY); } catch(e){}
     messages.length = 0;
     for (let i = 0; i < 6; i++) ambientChat();
-    admUpClasses(); applyDayTheme(); renderDots(); renderShop(); renderDays(); renderHUD();
+    admUpClasses(); applyDayTheme(); renderDots(); renderShop(); renderEarn(); renderDays(); renderHUD();
     applyStage(1, true); renderChat(); admRefresh();
     toast('Сохранение сброшено');
   });
