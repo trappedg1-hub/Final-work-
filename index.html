@@ -979,7 +979,8 @@ main{
 }
 .hero .art-img.on{ opacity:1; }
 .hero .art-img{ will-change:opacity; }
-#scene.stage-4 .art-img{ height:94%; }
+/* поза 4: она подалась к камере — увеличиваем и уводим низ кресла за кадр */
+#scene.stage-4 .art-img{ height:112%; max-height:none; margin-bottom:-12%; }
 
 .hero-glow{
   position:absolute; left:-10%; right:-10%; bottom:-6%; height:62%; z-index:2; pointer-events:none;
