@@ -954,23 +954,25 @@ main{
   background:radial-gradient(120% 80% at 50% 8%, #1b1430 0%, #0b0912 60%, #07060b 100%);
   touch-action:manipulation;
 }
+/* комната: тот же кадр, из которого вырезан передний план стола */
 .hero .art-bg{
-  position:absolute; inset:-6%; width:112%; height:112%;
-  object-fit:cover; object-position:50% 18%;
-  opacity:.85; z-index:1; pointer-events:none;
-  filter:blur(26px) saturate(1.25) brightness(.46);
-  transform:scale(1.06);
-  transition:opacity .5s ease, filter .5s ease;
+  position:absolute; inset:0; width:100%; height:100%;
+  object-fit:cover; object-position:50% 50%;
+  opacity:1; z-index:1; pointer-events:none;
+  filter:saturate(.96) brightness(.9);
+  transition:filter .5s ease;
 }
 .hero .art-lean{ position:absolute; inset:0; z-index:4; }
-/* центрируем флексом, а не transform'ом: idle-анимация картинки не сдвигает её с центра */
+/* центрируем флексом, а не transform'ом: idle-анимация картинки не сдвигает её с центра.
+   padding-bottom — посадочная линия: низ спрайта уходит за кромку стола. */
 .hero .art-tap{
   position:absolute; inset:0; display:flex;
   align-items:flex-end; justify-content:center;
+  padding-bottom:20.5%;
 }
 .hero .art-img{
   position:relative; inset:auto; margin:0;
-  height:100%; width:auto; max-width:none; max-height:100%;
+  height:76%; width:auto; max-width:none; max-height:100%;
   object-fit:contain; object-position:50% 100%;
   padding:0; background:transparent;
   filter:drop-shadow(0 18px 40px rgba(0,0,0,.55));
@@ -979,17 +981,26 @@ main{
 }
 .hero .art-img.on{ opacity:1; }
 .hero .art-img{ will-change:opacity; }
-/* поза 4: она подалась к камере — увеличиваем и уводим низ кресла за кадр */
-#scene.stage-4 .art-img{ height:112%; max-height:none; margin-bottom:-12%; }
+/* передний план: столешница пиксель в пиксель с фоном, выше героини */
+.hero .art-desk{
+  position:absolute; inset:0; width:100%; height:100%;
+  object-fit:cover; object-position:50% 50%;
+  z-index:6; pointer-events:none;
+  transition:transform .55s cubic-bezier(.4,0,.2,1), opacity .45s ease;
+}
+/* поза 4: камера ближе, стол уходит из кадра */
+#scene.stage-4 .art-tap{ padding-bottom:0; }
+#scene.stage-4 .art-img{ height:104%; max-height:none; }
+#scene.stage-4 .art-desk{ transform:translateY(104%); opacity:0; }
 
 .hero-glow{
   position:absolute; left:-10%; right:-10%; bottom:-6%; height:62%; z-index:2; pointer-events:none;
-  background:radial-gradient(55% 68% at 50% 100%, rgba(145,70,255,.42), rgba(77,227,255,.12) 46%, transparent 72%);
+  background:radial-gradient(58% 60% at 50% 100%, rgba(145,70,255,.16), rgba(77,227,255,.05) 48%, transparent 74%);
   transition:background .5s ease;
 }
 .hero-mic{
   position:absolute; right:-4%; bottom:0; width:44%; height:56%;
-  z-index:2; pointer-events:none; opacity:0; transition:opacity .45s ease;
+  z-index:7; pointer-events:none; opacity:0; transition:opacity .45s ease;
   background:
     linear-gradient(84deg, transparent 48.4%, rgba(226,226,240,.9) 49.2%, rgba(226,226,240,.9) 50.4%, transparent 51.2%) no-repeat,
     radial-gradient(closest-side at 14% 8%, rgba(240,240,252,.98), rgba(168,168,196,.85) 55%, transparent 74%) no-repeat,
@@ -1012,7 +1023,7 @@ main{
 
 /* light tiers repaint the room */
 #scene.light-1 .hero-glow{
-  background:radial-gradient(55% 68% at 50% 100%, rgba(255,168,116,.42), rgba(255,120,90,.12) 48%, transparent 72%); }
+  background:radial-gradient(58% 60% at 50% 100%, rgba(255,168,116,.16), rgba(255,120,90,.05) 48%, transparent 74%); }
 #scene.light-2 .hero-glow{
   background:radial-gradient(58% 70% at 50% 100%, rgba(145,70,255,.55), rgba(77,227,255,.26) 46%, transparent 74%); }
 #scene.light-2 .hero-glow{ animation:rgbGlow 11s linear infinite; }
@@ -1135,7 +1146,7 @@ main{
     <!-- ================= TAB: STREAM (heroine-first) ================= -->
     <section class="tab-panel active" id="tab-stream">
       <div class="hero" id="scene">
-        <img class="art-bg" id="artBg" alt="" aria-hidden="true" />
+        <img class="art-bg" id="artBg" src="assets/room_day1.webp" alt="" aria-hidden="true" />
         <div class="hero-glow" aria-hidden="true"></div>
         <div class="hero-mic" aria-hidden="true"></div>
 
@@ -1144,6 +1155,9 @@ main{
             <img class="art-img" id="artImg" alt="" />
           </div>
         </div>
+
+        <!-- передний план: столешница, вырезанная из того же кадра, что и комната -->
+        <img class="art-desk" id="artDesk" src="assets/room_fg.webp" alt="" aria-hidden="true" />
 
         <canvas id="fx"></canvas>
         <div class="flash" id="flash"></div>
@@ -1609,7 +1623,7 @@ const ADMIN = { open: false, pausedChat: false, pausedSim: false, taps: 0, lastT
 /* ---------- DOM ---------- */
 const $ = (s) => document.querySelector(s);
 const el = {
-  scene: $('#scene'), char: $('#char'), artImg: $('#artImg'), artBg: $('#artBg'), fx: $('#fx'),
+  scene: $('#scene'), char: $('#char'), artImg: $('#artImg'), artBg: $('#artBg'), artDesk: $('#artDesk'), fx: $('#fx'),
   bits: $('#bitsCount'), viewers: $('#viewerCount'), viewersPill: $('#viewersPill'),
   subs: $('#subCount'), chatOnline: $('#chatOnline'),
   stageTitle: $('#stageTitle'), stageSub: $('#stageSub'), goalText: $('#goalText'),
@@ -2053,8 +2067,9 @@ function applyStage(stage, announce){
   }
 }
 
-/* art override: img loads if user supplied real art */
+/* прогрев комнаты и переднего плана стола: они грузятся первыми */
 let artToken = 0;
+['assets/room_day1.webp', 'assets/room_fg.webp'].forEach(src => { const i = new Image(); i.src = src; });
 function loadArt(src){
   artToken++;
   const token = artToken;
@@ -2064,7 +2079,6 @@ function loadArt(src){
     if (token !== artToken) return;
     el.artImg.src = src;
     el.artImg.classList.add('on');
-    if (el.artBg) { el.artBg.src = src; el.artBg.classList.add('on'); }
     motionSync(src);
   };
   probe.onerror = () => {
