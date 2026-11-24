@@ -240,6 +240,8 @@ main{
 }
 .chat-pin #stageSub{ overflow:hidden; text-overflow:ellipsis; }
 .pin-ic{ font-size:11px; opacity:.8; flex:0 0 auto; }
+.pin-sep{ opacity:.45; flex:0 0 auto; }
+#stageTitle{ flex:0 0 auto; color:#fff; font-weight:700; }
 
 /* blurred camera backdrop so the letterbox never looks empty */
 .art-bg{
@@ -300,6 +302,11 @@ main{
   border:1px solid rgba(255,205,74,.3); border-radius:10px;
 }
 .chatfeed .msg.sys{ justify-content:flex-start; }
+.chatfeed .msg .badge{ display:inline-flex; align-items:center; gap:2px; letter-spacing:.3px; }
+.chatfeed .msg .badge i{ font-style:normal; font-size:9px; }
+.chatfeed .msg .badge.mod{ background:rgba(47,191,113,.16); color:#4ade80; border:1px solid rgba(47,191,113,.5); }
+.chatfeed .msg .badge.vip{ background:rgba(145,70,255,.18); color:#c9a8ff; border:1px solid rgba(145,70,255,.55); }
+.chatfeed .msg .badge.sub{ background:rgba(255,205,74,.14); color:#ffd166; border:1px solid rgba(255,205,74,.42); }
 
 /* compose bar */
 .compose{
@@ -1141,7 +1148,7 @@ main{
             </div>
             <div class="sg-bar"><i id="barFill"></i></div>
             <div class="sg-foot">
-              <span class="sg-title" id="stageTitle">Стеснительный старт</span>
+              <span class="sg-title">«<span id="goalText">Снять кофту на плечи 💕</span>»</span>
               <span class="sg-right">
                 <span id="dayLabel">День 1</span>
                 <span class="stage-dots" id="stageDots"></span>
@@ -1156,6 +1163,8 @@ main{
       <!-- pinned stream goal, then the live chat feed -->
       <div class="chat-pin">
         <span class="pin-ic">📌</span>
+        <span id="stageTitle">Стеснительный старт</span>
+        <span class="pin-sep">·</span>
         <span id="stageSub">«Ой... Спасибо за первый донат! Чат, только не смотрите так пристально, мне неловко...»</span>
       </div>
       <div class="chatfeed" id="peek"></div>
@@ -1273,24 +1282,28 @@ const DAY_STAGES = [
       {
         label: 'Застенчивый старт',
         note: 'тёплая кофта, взгляд в пол',
+        goal: 'Снять кофту на плечи 💕',
         quote: '«Ой... Спасибо за первый донат! Чат, только не смотрите так пристально, мне неловко...»',
         art: 'assets/art_day1_sg1.webp'
       },
       {
         label: 'Становится жарко',
         note: 'кофта спущена на плечи',
+        goal: 'Опустить бретельку на плечо 😳',
         quote: '«Фух, в комнате правда жарко... Ну ладно, спущу кофту на плечи, только не скриньте!»',
         art: 'assets/art_day1_sg2.webp'
       },
       {
         label: 'Фан-сервис',
         note: 'белый топ на тонких бретелях',
+        goal: 'Показать полный образ 🔥',
         quote: '«Чат, вам правда так нравится этот вырез?.. Ой, бретелька совсем сползает...»',
         art: 'assets/art_day1_sg3.webp'
       },
       {
         label: 'Кульминация',
         note: 'ближе к камере',
+        goal: 'Рекорд онлайна 1К ✨',
         quote: '«Боже, рекорд онлайна! Я вся горю от ваших донатов... Хотите рассмотреть поближе?..»',
         art: 'assets/art_day1_sg4.webp'
       }
@@ -1303,10 +1316,10 @@ const DAY_STAGES = [
     accent: ['#ff4dc4', '#9146FF'],
     wall: ['#2b1638', '#0f0a16'],
     stages: [
-      { quote: '«Ой, свет включили... Я думала, будет уютнее. Ладно, привыкну, только не смейтесь.»', label: 'Стеснительный старт', note: 'плед на плечах, тихий голос', art: 'art_day2_stage1.png' },
-      { quote: '«Плед куда-то делся... Зато теперь видно, какой у меня свет. Красиво же?»', label: 'Первое расслабление', note: 'плед сполз, подсветка включена', art: 'art_day2_stage2.png' },
-      { quote: '«Неоновая ночь, говорите... Я под этот свет специально образ подобрала. Нравится?»', label: 'Полная сцена', note: 'неоновый образ, взгляд в камеру', art: 'art_day2_stage3.png' },
-      { quote: '«Мы в топе! Я в шоке... Чат, вы лучшие, я сейчас расплачусь.»', label: 'Финал саб-гоала', note: 'конфетти, стрим взлетает в топ', art: 'art_day2_stage4.png' }
+      { quote: '«Ой, свет включили... Я думала, будет уютнее. Ладно, привыкну, только не смейтесь.»', label: 'Стеснительный старт', goal: 'Снять плед с плеч 🛋', note: 'плед на плечах, тихий голос', art: 'art_day2_stage1.png' },
+      { quote: '«Плед куда-то делся... Зато теперь видно, какой у меня свет. Красиво же?»', label: 'Первое расслабление', goal: 'Включить неон 💜', note: 'плед сполз, подсветка включена', art: 'art_day2_stage2.png' },
+      { quote: '«Неоновая ночь, говорите... Я под этот свет специально образ подобрала. Нравится?»', label: 'Полная сцена', goal: 'Неоновый образ в кадре 🎆', note: 'неоновый образ, взгляд в камеру', art: 'art_day2_stage3.png' },
+      { quote: '«Мы в топе! Я в шоке... Чат, вы лучшие, я сейчас расплачусь.»', label: 'Финал саб-гоала', goal: 'Топ категории 🚀', note: 'конфетти, стрим взлетает в топ', art: 'art_day2_stage4.png' }
     ]
   },
   {
@@ -1316,10 +1329,10 @@ const DAY_STAGES = [
     accent: ['#4de3ff', '#ffd166'],
     wall: ['#152238', '#0a0f1a'],
     stages: [
-      { quote: '«Привет-привет... Сегодня айдол-программа, я немного волнуюсь перед камерой.»', label: 'Стеснительный старт', note: 'смущённо машет в камеру', art: 'art_day3_stage1.png' },
-      { quote: '«Так, хореография... Кажется, я забыла движение. Но вам же всё равно нравится?»', label: 'Первое расслабление', note: 'отрабатывает хореографию', art: 'art_day3_stage2.png' },
-      { quote: '«Софиты, сцена, чат... Я и правда как на настоящем концерте!»', label: 'Полная сцена', note: 'полный айдол-лук, софиты', art: 'art_day3_stage3.png' },
-      { quote: '«Финальный поклон! Спасибо, что дошли со мной до этой сцены.»', label: 'Финал саб-гоала', note: 'финальный поклон, зал ревёт', art: 'art_day3_stage4.png' }
+      { quote: '«Привет-привет... Сегодня айдол-программа, я немного волнуюсь перед камерой.»', label: 'Стеснительный старт', goal: 'Выйти на сцену 🎤', note: 'смущённо машет в камеру', art: 'art_day3_stage1.png' },
+      { quote: '«Так, хореография... Кажется, я забыла движение. Но вам же всё равно нравится?»', label: 'Первое расслабление', goal: 'Станцевать хореографию 💃', note: 'отрабатывает хореографию', art: 'art_day3_stage2.png' },
+      { quote: '«Софиты, сцена, чат... Я и правда как на настоящем концерте!»', label: 'Полная сцена', goal: 'Полный айдол-лук ✨', note: 'полный айдол-лук, софиты', art: 'art_day3_stage3.png' },
+      { quote: '«Финальный поклон! Спасибо, что дошли со мной до этой сцены.»', label: 'Финал саб-гоала', goal: 'Финальный поклон 🙇', note: 'финальный поклон, зал ревёт', art: 'art_day3_stage4.png' }
     ]
   },
   {
@@ -1329,10 +1342,10 @@ const DAY_STAGES = [
     accent: ['#ffd166', '#ff4dc4'],
     wall: ['#2a1530', '#120a16'],
     stages: [
-      { quote: '«Это мой последний стрим сезона... И самый страшный. Выхожу.»', label: 'Стеснительный старт', note: 'выходит на сцену впервые', art: 'art_day4_stage1.png' },
-      { quote: '«Свет в глаза — и я уже не помню, что хотела сказать. Просто смотрите.»', label: 'Первое расслабление', note: 'ловит свет, улыбается', art: 'art_day4_stage2.png' },
-      { quote: '«Легендарный образ, да? Я старалась. Правда старалась.»', label: 'Полная сцена', note: 'легендарный образ сезона', art: 'art_day4_stage3.png' },
-      { quote: '«Миллион... Чат, мы правда это сделали. Спасибо каждому.»', label: 'Финал саб-гоала', note: 'миллион зрителей в чате', art: 'art_day4_stage4.png' }
+      { quote: '«Это мой последний стрим сезона... И самый страшный. Выхожу.»', label: 'Стеснительный старт', goal: 'Выйти в прямой эфир 🌟', note: 'выходит на сцену впервые', art: 'art_day4_stage1.png' },
+      { quote: '«Свет в глаза — и я уже не помню, что хотела сказать. Просто смотрите.»', label: 'Первое расслабление', goal: 'Поймать свет софитов ✨', note: 'ловит свет, улыбается', art: 'art_day4_stage2.png' },
+      { quote: '«Легендарный образ, да? Я старалась. Правда старалась.»', label: 'Полная сцена', goal: 'Легендарный образ 👑', note: 'легендарный образ сезона', art: 'art_day4_stage3.png' },
+      { quote: '«Миллион... Чат, мы правда это сделали. Спасибо каждому.»', label: 'Финал саб-гоала', goal: 'Миллион зрителей 💎', note: 'миллион зрителей в чате', art: 'art_day4_stage4.png' }
     ]
   }
 ];
@@ -1451,7 +1464,7 @@ const el = {
   scene: $('#scene'), char: $('#char'), artImg: $('#artImg'), artBg: $('#artBg'), fx: $('#fx'),
   bits: $('#bitsCount'), viewers: $('#viewerCount'), viewersPill: $('#viewersPill'),
   subs: $('#subCount'), chatOnline: $('#chatOnline'),
-  stageTitle: $('#stageTitle'), stageSub: $('#stageSub'),
+  stageTitle: $('#stageTitle'), stageSub: $('#stageSub'), goalText: $('#goalText'),
   dayLabel: $('#dayLabel'),
   goalNow: $('#goalNow'), goalMax: $('#goalMax'), fill: $('#barFill'),
   dots: $('#stageDots'), peek: $('#peek'), chatFull: $('#chatFull'),
@@ -1604,8 +1617,10 @@ function msgNode(m){
     d.innerHTML = `<span class="m">${m.text}</span>`;
     return d;
   }
-  const badge = m.user.b
-    ? `<span class="badge ${m.user.b}">${m.user.b === 'mod' ? 'mod' : m.user.b === 'vip' ? 'vip' : 'sub'}</span>`
+  const months = 1 + (m.user.n.length * 3 + m.user.n.charCodeAt(0)) % 11;
+  const badge = m.user.b === 'mod' ? '<span class="badge mod"><i>🛡</i>MOD</span>'
+    : m.user.b === 'vip' ? '<span class="badge vip">VIP</span>'
+    : m.user.b ? `<span class="badge sub">⭐ ${months}m</span>`
     : '';
   d.innerHTML = `${badge}<span class="u" style="color:${m.user.c || '#b9b4d0'}">${m.user.n}</span><span class="m">${m.text}</span>`;
   return d;
@@ -1847,6 +1862,7 @@ function applyStage(stage, announce){
 
   el.char.setAttribute('data-mood', String(stage));
   el.stageTitle.textContent = s.label;
+  if (el.goalText) el.goalText.textContent = s.goal || s.note;
   el.stageSub.textContent = s.quote || s.note;
   el.stageSub.classList.remove('flash-in');
   void el.stageSub.offsetWidth;
