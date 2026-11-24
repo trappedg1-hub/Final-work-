@@ -986,47 +986,6 @@ main{
   background:radial-gradient(55% 68% at 50% 100%, rgba(145,70,255,.42), rgba(77,227,255,.12) 46%, transparent 72%);
   transition:background .5s ease;
 }
-/* ---- кресло: сгенерированный спрайт, посадка подгоняется под позу ---- */
-.hero-chair{
-  position:absolute; inset:0; z-index:2; pointer-events:none; opacity:0;
-  transition:opacity .4s ease;
-  /* tier-1 офисный стул по умолчанию */
-  --ch-h:85.1%; --ch-t:18.2%; --ch-clip:0%; --ch-sway:0deg;
-}
-#scene.chair-1 .hero-chair, #scene.chair-2 .hero-chair, #scene.chair-3 .hero-chair{ opacity:1; }
-
-/* размеры (в % высоты сцены): спинка выше, база на полу */
-#scene.chair-1 .hero-chair{ --ch-h:85.1%; --ch-t:18.2%; }
-#scene.chair-2 .hero-chair{ --ch-h:92.6%; --ch-t:8.3%; }
-#scene.chair-3 .hero-chair{ --ch-h:92.1%; --ch-t:12.7%; }
-
-/* поза 3 — нога на ногу: она сидит выше, кресло поднимаем */
-#scene.stage-3.chair-1 .hero-chair{ --ch-t:13.7%; }
-#scene.stage-3.chair-2 .hero-chair{ --ch-t:3.8%; }
-#scene.stage-3.chair-3 .hero-chair{ --ch-t:8.2%; }
-
-/* поза 4 — откинулась назад: видна только спинка за плечами и головой */
-#scene.stage-4 .hero-chair{ --ch-clip:47%; --ch-t:1%; --ch-h:91.5%; }
-#scene.stage-4.chair-2 .hero-chair{ --ch-clip:53%; --ch-t:2%; --ch-h:79%; }
-#scene.stage-4.chair-3 .hero-chair{ --ch-clip:50%; --ch-t:2%; --ch-h:84%; }
-
-.chair-img{
-  position:absolute; left:50%; top:var(--ch-t);
-  height:var(--ch-h); width:auto; max-width:none; max-height:none;
-  transform:translateX(-50%);
-  clip-path:inset(0 0 var(--ch-clip) 0);
-  filter:drop-shadow(0 12px 26px rgba(0,0,0,.5));
-  transition:opacity .3s ease;
-}
-/* мягкая тень на полу под крестовиной (в позе 4 её нет — база за кадром) */
-.hero-chair::after{
-  content:''; position:absolute; left:0; right:0; margin:0 auto;
-  bottom:.8%; width:54%; height:4%; border-radius:50%;
-  background:radial-gradient(closest-side, rgba(0,0,0,.5), transparent 74%);
-  filter:blur(3px);
-}
-#scene.stage-4 .hero-chair::after{ display:none; }
-
 .hero-mic{
   position:absolute; right:-4%; bottom:0; width:44%; height:56%;
   z-index:2; pointer-events:none; opacity:0; transition:opacity .45s ease;
@@ -1177,9 +1136,6 @@ main{
       <div class="hero" id="scene">
         <img class="art-bg" id="artBg" alt="" aria-hidden="true" />
         <div class="hero-glow" aria-hidden="true"></div>
-        <div class="hero-chair" aria-hidden="true">
-          <img class="chair-img" id="chairImg" src="assets/chair_office.webp" alt="" decoding="async" />
-        </div>
         <div class="hero-mic" aria-hidden="true"></div>
 
         <div class="art-lean" id="artLean">
@@ -1529,12 +1485,6 @@ const DAY_STAGES = [
 /* ---------- UPGRADE CATALOG ---------- */
 const UPGRADES = [
   {
-    id: 'chair', icon: '🪑', name: 'Кресло',
-    tiers: ['Офисный стул', 'Розовое геймерское с ушками', 'Кожаный трон'],
-    prices: [0, 450, 2600],
-    effect: 'комфорт → рост зрителей'
-  },
-  {
     id: 'mic', icon: '🎙', name: 'Микрофон',
     tiers: ['Петличка', 'Студийный HyperX', 'HyperX на пантографе'],
     prices: [0, 600, 3200],
@@ -1553,6 +1503,8 @@ const UPGRADES = [
     effect: 'чёткость → пассив и онлайн'
   }
 ];
+
+const UP_BY_ID = Object.fromEntries(UPGRADES.map(u => [u.id, u]));
 
 /* ---------- CHAT PERSONAS ---------- */
 const USERS = [
@@ -2147,9 +2099,9 @@ function renderHUD(){
   if (el.earnGiftSubs) el.earnGiftSubs.textContent = state.giftSubs;
   if (el.giftRate) el.giftRate.textContent = (state.giftSubs * GIFT_RATE).toFixed(2);
   if (el.camBoost) el.camBoost.textContent = state.up.cam
-    ? `${UPGRADES[3].tiers[state.up.cam]} — ×${camMult().toFixed(2)} к заработку`
+    ? `${UP_BY_ID.cam.tiers[state.up.cam]} — ×${camMult().toFixed(2)} к заработку`
     : 'Webcam 720p — без бонуса';
-  if (el.camTag) el.camTag.textContent = state.up.cam ? UPGRADES[3].tiers[state.up.cam].split(' ')[0] : '';
+  if (el.camTag) el.camTag.textContent = state.up.cam ? UP_BY_ID.cam.tiers[state.up.cam].split(' ')[0] : '';
   const gsBits = document.getElementById('gsBits');
   const gsSubs = document.getElementById('gsSubs');
   if (gsBits) gsBits.textContent = fmt(Math.floor(state.bits));
@@ -2652,21 +2604,11 @@ const UP_IDS = ['chair', 'mic', 'light', 'cam'];
 
 function admProgressPct(){ return clamp(state.progress / goalTarget(), 0, 1); }
 
-const CHAIR_ART = { 1: 'assets/chair_office.webp', 2: 'assets/chair_pink.webp', 3: 'assets/chair_throne.webp' };
-/* тихо прогреваем остальные тиры, чтобы апгрейд не мигал белым */
-setTimeout(() => {
-  [2, 3].forEach(t => { const im = new Image(); im.src = CHAIR_ART[t]; });
-}, 2500);
 function applyUpClasses(){
   UP_IDS.forEach(k => [1, 2, 3].forEach(v => el.scene.classList.remove(`${k}-${v}`)));
   Object.entries(state.up).forEach(([k, v]) => {
     if (k !== 'chair' && v > 0) el.scene.classList.add(`${k}-${v}`);
   });
-  /* дешёвый tier-1 стул у неё всегда — первый платный апгрейд это уже «геймерское» */
-  const lvl = Math.max(1, Math.min(3, (state.up.chair || 0) + 1));
-  if (el.scene) el.scene.classList.add('chair-' + lvl);
-  const img = document.getElementById('chairImg');
-  if (img && img.getAttribute('src') !== CHAIR_ART[lvl]) img.setAttribute('src', CHAIR_ART[lvl]);
 }
 function admUpClasses(){ applyUpClasses(); }
 
