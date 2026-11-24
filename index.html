@@ -189,7 +189,7 @@ main{
 .fore-svg{ z-index:3; pointer-events:none; }
 .art-img{
   position:absolute; inset:0; width:100%; height:100%;
-  object-fit:cover; object-position:50% 30%;
+  object-fit:cover; object-position:50% 50%;
   opacity:0; transition:opacity .35s ease;
   z-index:4;
 }
@@ -221,22 +221,8 @@ main{
   0%, 100% { transform:scale(1.02) translateY(0); }
   50%      { transform:scale(1.024) translateY(-5px); }
 }
-.art-img{ transform-origin:50% 88%; }
-.art-lids{ transform-origin:50% 88%; }
-.art-lean.idle .art-img,
-.art-lean.idle .art-lids{ animation:streamerIdle 3.6s ease-in-out infinite; }
-
-/* blink overlay — closed-lash bars placed over the eyes of the current frame */
-.art-lids{
-  position:absolute; inset:0; z-index:6; pointer-events:none; opacity:0;
-  transition:opacity .05s linear;
-}
-.art-lids.on{ opacity:1; }
-.art-lids i{
-  position:absolute; display:block; transform:translate(-50%, -50%); border-radius:50%;
-  background:linear-gradient(180deg, rgba(32,18,24,0) 0%, rgba(32,18,24,.86) 46%, rgba(255,214,198,.45) 100%);
-  box-shadow:0 0 7px rgba(255,186,170,.16);
-}
+.art-img{ transform-origin:50% 50%; }
+.art-lean.idle .art-img{ animation:streamerIdle 3.6s ease-in-out infinite; }
 
 #fpsBadge{
   position:absolute; left:10px; bottom:10px; z-index:7; display:none;
@@ -296,26 +282,6 @@ main{
   font-size:8.5px; letter-spacing:.5px; color:rgba(255,255,255,.42);
   font-family:ui-monospace, SFMono-Regular, Menlo, monospace;
   pointer-events:none;
-}
-
-/* onboarding tap hint */
-.tap-hint{
-  position:absolute; left:50%; bottom:22%; transform:translateX(-50%);
-  z-index:7; pointer-events:none;
-  display:flex; align-items:center; gap:6px;
-  font-size:11px; font-weight:800; letter-spacing:2px;
-  color:rgba(255,255,255,.9);
-  padding:8px 14px; border-radius:99px;
-  background:rgba(12,9,20,.55); backdrop-filter:blur(6px);
-  border:1px solid rgba(255,255,255,.22);
-  animation:hintPulse 1.8s ease-in-out infinite;
-  transition:opacity .3s ease;
-}
-.tap-hint span{ font-size:13px; }
-.tap-hint.gone{ opacity:0; }
-@keyframes hintPulse{
-  0%,100%{ transform:translateX(-50%) scale(1); opacity:.75 }
-  50%{ transform:translateX(-50%) scale(1.07); opacity:1 }
 }
 
 /* tap feedback ring */
@@ -1030,14 +996,12 @@ main{
           <div class="art-lean" id="artLean">
             <div class="art-tap" id="artTap">
               <img class="art-img" id="artImg" alt="" />
-              <div class="art-lids" id="artLids" aria-hidden="true"><i></i><i></i></div>
             </div>
           </div>
 
           <!-- particles -->
           <canvas id="fx"></canvas>
 
-          <div class="tap-hint" id="tapHint"><span>❤</span>ТАП</div>
           <div class="flash" id="flash"></div>
 
           <!-- overlays -->
@@ -1054,7 +1018,6 @@ main{
           </div>
 
           <div id="fpsBadge">60 FPS</div>
-          <div class="placeholder-note" id="artSlotName">slot: art_day1_stage1.png</div>
         </div>
       </div>
 
@@ -1359,7 +1322,7 @@ const el = {
   bits: $('#bitsCount'), viewers: $('#viewerCount'), viewersPill: $('#viewersPill'),
   subs: $('#subCount'), chatOnline: $('#chatOnline'),
   stageTitle: $('#stageTitle'), stageSub: $('#stageSub'),
-  slot: $('#artSlotName'), dayLabel: $('#dayLabel'),
+  dayLabel: $('#dayLabel'),
   goalNow: $('#goalNow'), goalMax: $('#goalMax'), fill: $('#barFill'),
   dots: $('#stageDots'), peek: $('#peek'), chatFull: $('#chatFull'),
   shopList: $('#shopList'), shopBits: $('#shopBits'), passiveInfo: $('#passiveInfo'),
@@ -1377,74 +1340,37 @@ const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
    MOTION — juicy streamer feedback, CSS transforms only
    1) idle breathing  2) spring tap bounce  3) combo lean-in  4) blink
    ========================================================== */
-const ART_W = 2100, ART_H = 4600;               // master canvas of the day-1 sprites
-const ART_POS = { x: 0.50, y: 0.30 };           // must match object-position of .art-img
-const LID_EYES = {                              // eye centres, normalised to the master
-  'assets/art_day1_sg1.webp': [[0.3370, 0.1443], [0.5244, 0.1435]],
-  'assets/art_day1_sg2.webp': [[0.3550, 0.1559], [0.5466, 0.1481]],
-  'assets/art_day1_sg3.webp': [[0.3344, 0.1539], [0.5165, 0.1417]],
-  'assets/art_day1_sg4.webp': [[0.3716, 0.1548], [0.5610, 0.1433]]
-};
 const MOTION = {
-  lean: null, tap: null, lids: null, bars: [], src: '',
-  leanTimer: 0, blinkTimer: 0, reduced: false,
+  lean: null, tap: null, src: '',
+  leanTimer: 0, reduced: false,
   fps: { frames: 0, t0: 0, val: 0, el: document.getElementById('fpsBadge') }
 };
 
 function motionInit(){
   MOTION.lean = document.getElementById('artLean');
   MOTION.tap  = document.getElementById('artTap');
-  MOTION.lids = document.getElementById('artLids');
   if (!MOTION.lean || !MOTION.tap) return;
-  MOTION.bars = MOTION.lids ? Array.prototype.slice.call(MOTION.lids.children) : [];
   try { MOTION.reduced = matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (e) {}
-  window.addEventListener('resize', motionLayout, { passive: true });
-  window.addEventListener('orientationchange', () => setTimeout(motionLayout, 140), { passive: true });
   if (location.search.indexOf('fps') > -1) motionFpsToggle(true);
   const btn = document.getElementById('fpsToggle');
   if (btn) btn.addEventListener('click', () => motionFpsToggle());
-  motionLayout();
-  motionBlinkLoop();
   requestAnimationFrame(motionFpsTick);
 }
 
-/* map normalised master coords onto the object-fit:cover crop of the art box */
-function motionLayout(){
-  if (!MOTION.lids) return;
-  const eyes = LID_EYES[MOTION.src];
-  if (!eyes){ MOTION.lids.classList.remove('on'); return; }
-  const r = MOTION.tap.getBoundingClientRect();
-  const sw = r.width || el.scene.clientWidth || 360;
-  const sh = r.height || el.scene.clientHeight || 640;
-  const sc = Math.max(sw / ART_W, sh / ART_H);
-  const dw = ART_W * sc, dh = ART_H * sc;
-  const ox = (sw - dw) * ART_POS.x, oy = (sh - dh) * ART_POS.y;
-  const w = Math.max(7, dw * 0.050);
-  const h = Math.max(2.2, dh * 0.0062);
-  MOTION.bars.forEach((bar, i) => {
-    const e = eyes[i];
-    if (!e) return;
-    bar.style.width  = w.toFixed(1) + 'px';
-    bar.style.height = h.toFixed(1) + 'px';
-    bar.style.left   = (ox + e[0] * dw).toFixed(1) + 'px';
-    bar.style.top    = (oy + e[1] * dh + h * 0.1).toFixed(1) + 'px';
-  });
-}
-
-/* called by loadArt(): start/stop the idle loop and move the eyelids to the new frame */
+/* called by loadArt(): start or stop the idle breathing loop */
 function motionSync(src){
   MOTION.src = src || '';
   if (MOTION.lean) MOTION.lean.classList.toggle('idle', !!MOTION.src && !MOTION.reduced);
-  motionLayout();
 }
 
+/* tap = elastic squash; power >= 0.9 (donation / purchase / stage-up) also leans in */
 function motionTap(power){
   if (MOTION.reduced || !MOTION.tap) return;
   const t = MOTION.tap;
   t.classList.remove('bounce');
-  void t.offsetWidth;                       // restart the keyframe animation
+  void t.offsetWidth;
   t.classList.add('bounce');
-  if (power >= 0.9) motionLean(1500);       // donation / purchase / stage-up
+  if (power >= 0.9) motionLean(1500);
 }
 
 function motionLean(ms){
@@ -1452,18 +1378,6 @@ function motionLean(ms){
   MOTION.lean.classList.add('lean');
   clearTimeout(MOTION.leanTimer);
   MOTION.leanTimer = setTimeout(() => MOTION.lean.classList.remove('lean'), ms || 1400);
-}
-
-function motionBlinkLoop(){
-  const wait = 3400 + Math.random() * 1600;  // 3.4–5 s between blinks
-  MOTION.blinkTimer = setTimeout(() => {
-    const live = MOTION.lean && MOTION.lean.classList.contains('idle');
-    if (!MOTION.reduced && live && !document.hidden && MOTION.lids){
-      MOTION.lids.classList.add('on');
-      setTimeout(() => MOTION.lids.classList.remove('on'), 120);
-    }
-    motionBlinkLoop();
-  }, wait);
 }
 
 function motionFpsToggle(forceOn){
@@ -1485,7 +1399,7 @@ function motionFpsTick(now){
     f.frames = 0; f.t0 = now;
     if (f.el && f.el.classList.contains('on')){
       const idle = MOTION.lean && MOTION.lean.classList.contains('idle');
-      f.el.textContent = f.val + ' FPS · ' + (idle ? 'idle+blink' : 'static');
+      f.el.textContent = f.val + ' FPS · ' + (idle ? 'idle' : 'static');
     }
   }
   requestAnimationFrame(motionFpsTick);
@@ -1823,7 +1737,6 @@ function applyStage(stage, announce){
   });
 
   // art slot
-  el.slot.textContent = 'slot: ' + s.art;
   loadArt(s.art);
 
   if (announce){
@@ -2136,8 +2049,6 @@ el.scene.addEventListener('pointerdown', (e) => {
   ring.style.top = p.y + 'px';
   el.scene.appendChild(ring);
   setTimeout(() => ring.remove(), 460);
-  const hint = document.getElementById('tapHint');
-  if (hint && !hint.classList.contains('gone')) hint.classList.add('gone');
   if (tapLock) return;
   tapLock = true;
   setTimeout(() => tapLock = false, 30);
