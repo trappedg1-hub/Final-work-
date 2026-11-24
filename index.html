@@ -787,6 +787,60 @@ main{
 @media (prefers-reduced-motion:reduce){
   *{ animation-duration:.001s !important; transition-duration:.001s !important; }
 }
+/* ============================================================
+   ADMIN SHEET (скрытая панель управления)
+   ============================================================ */
+.admin{
+  position:fixed; inset:0; z-index:80; display:none;
+  padding:calc(var(--safe-t) + 10px) 10px calc(var(--safe-b) + 10px);
+  background:rgba(6,6,9,.86);
+  -webkit-backdrop-filter:blur(10px); backdrop-filter:blur(10px);
+}
+.admin.show{ display:block; }
+.admin-card{
+  height:100%; display:flex; flex-direction:column; overflow:hidden;
+  border-radius:16px; background:#18181b;
+  border:1px solid rgba(145,70,255,.28);
+  box-shadow:0 30px 80px -30px rgba(0,0,0,.92), inset 0 1px 0 rgba(255,255,255,.05);
+  animation:panelIn .2s ease both;
+}
+.adm-head{ display:flex; align-items:center; gap:10px; padding:11px 13px;
+  background:#0e0e10; border-bottom:1px solid rgba(255,255,255,.07); }
+.adm-title b{ display:block; font-size:14px; letter-spacing:.2px; color:#efeff1; }
+.adm-sub{ font-size:10.5px; color:#adadb8; }
+.adm-sub i{ color:#c9a8ff; font-style:normal; font-weight:700; }
+.adm-x{ margin-left:auto; width:30px; height:30px; border-radius:50%;
+  background:#26262c; color:#efeff1; font-size:13px; line-height:1;
+  display:grid; place-items:center; }
+.adm-body{ flex:1 1 auto; overflow-y:auto; padding:10px 12px 18px; -webkit-overflow-scrolling:touch; }
+.adm-body section{ padding:10px 0 4px; border-bottom:1px solid rgba(255,255,255,.06); }
+.adm-body section:last-child{ border-bottom:0; }
+.adm-body h4{ margin:0 0 8px; font-size:10px; letter-spacing:1.1px; text-transform:uppercase; color:#9146FF; }
+.adm-grid{ display:grid; grid-template-columns:repeat(3,1fr); gap:8px; }
+.adm-grid label{ display:flex; flex-direction:column; gap:4px; font-size:10.5px; color:#adadb8; }
+.adm-grid input, .adm-body textarea{
+  width:100%; box-sizing:border-box; padding:7px 9px; border-radius:9px;
+  background:#0e0e10; border:1px solid rgba(255,255,255,.1);
+  color:#efeff1; font-size:12.5px; font-family:inherit; }
+.adm-body input[type=range]{ width:100%; accent-color:#9146FF; }
+.adm-range{ display:flex; flex-direction:column; gap:5px; margin-top:9px; font-size:10.5px; color:#adadb8; }
+.adm-range b{ color:#efeff1; font-size:11px; font-variant-numeric:tabular-nums; }
+.adm-row{ display:flex; flex-wrap:wrap; gap:6px; margin-top:8px; }
+.adm-row button{
+  flex:0 0 auto; padding:7px 11px; border-radius:9px; font-size:11.5px; font-weight:700;
+  background:#26262c; color:#efeff1; border:1px solid rgba(255,255,255,.08); }
+.adm-row button:active{ transform:scale(.97); }
+.adm-row button.ghost{ background:transparent; color:#adadb8; border-color:rgba(255,255,255,.14); }
+.adm-row button.danger{ background:rgba(233,25,22,.16); color:#ff8f8f; border-color:rgba(233,25,22,.42); }
+.adm-row button.on{ background:#9146FF; border-color:#9146FF; color:#fff; }
+.adm-ups{ display:flex; flex-direction:column; gap:8px; }
+.adm-up{ background:#0e0e10; border:1px solid rgba(255,255,255,.07); border-radius:10px; padding:8px 10px 4px; }
+.adm-up-n{ font-size:12px; font-weight:700; color:#efeff1; }
+.adm-up-t{ font-size:10.5px; color:#adadb8; margin-top:2px; }
+.adm-check{ display:flex; align-items:center; gap:8px; margin-top:9px; font-size:11.5px; color:#d6d3df; }
+.adm-check input{ width:16px; height:16px; accent-color:#9146FF; }
+.adm-body textarea{ margin-top:9px; min-height:80px; resize:vertical;
+  font-family:ui-monospace, SFMono-Regular, Menlo, monospace; font-size:11px; line-height:1.4; }
 </style>
 </head>
 <body>
@@ -1263,6 +1317,82 @@ main{
   </div>
 </div>
 
+<!-- ================= ADMIN SHEET (скрыта: ?admin=1, 5 тапов по аватарке, Ctrl+Shift+A) ================= -->
+<div class="admin" id="adminPanel" aria-hidden="true">
+  <div class="admin-card" role="dialog" aria-label="Админ-панель">
+    <div class="adm-head">
+      <div class="adm-title">
+        <b>Админ-панель</b>
+        <span class="adm-sub">день <i id="admDayNow">1</i> · стадия <i id="admStageNow">1</i> · сезон <i id="admLoopNow">1</i></span>
+      </div>
+      <button class="adm-x" id="admClose" type="button" aria-label="Закрыть">✕</button>
+    </div>
+
+    <div class="adm-body">
+      <section>
+        <h4>Экономика</h4>
+        <div class="adm-grid">
+          <label>Bits <input type="number" id="admBits" step="100" min="0"></label>
+          <label>Зрители <input type="number" id="admVie" step="50" min="0"></label>
+          <label>Сабы <input type="number" id="admSubs" step="10" min="0"></label>
+        </div>
+        <div class="adm-row">
+          <button type="button" data-bits="1000">+1 000</button>
+          <button type="button" data-bits="10000">+10 000</button>
+          <button type="button" data-bits="100000">+100 000</button>
+          <button type="button" class="ghost" data-bits="0">обнулить</button>
+        </div>
+        <label class="adm-range">Прогресс дня <input type="range" id="admProg" min="0" max="1000" value="0" step="1"><b id="admProgVal">0%</b></label>
+        <div class="adm-row">
+          <button type="button" id="admComplete">Закрыть саб-гол</button>
+          <button type="button" class="ghost" id="admResetProg">Сброс дня</button>
+        </div>
+      </section>
+
+      <section>
+        <h4>Сцена</h4>
+        <div class="adm-row" id="admDays"></div>
+        <div class="adm-row" id="admStages"></div>
+        <div class="adm-row">
+          <button type="button" id="admNextDay">Следующий день</button>
+          <button type="button" class="ghost" id="admPrevDay">Предыдущий</button>
+        </div>
+      </section>
+
+      <section>
+        <h4>Апгрейды</h4>
+        <div id="admUps" class="adm-ups"></div>
+      </section>
+
+      <section>
+        <h4>Чат</h4>
+        <div class="adm-row">
+          <button type="button" id="admDonate">Донат от бота</button>
+          <button type="button" id="admMsg">Сообщение</button>
+          <button type="button" class="ghost" id="admClear">Очистить</button>
+        </div>
+        <label class="adm-check"><input type="checkbox" id="admPauseChat"> пауза чата</label>
+        <label class="adm-check"><input type="checkbox" id="admPauseSim"> пауза симуляции</label>
+      </section>
+
+      <section>
+        <h4>Отладка</h4>
+        <div class="adm-row">
+          <button type="button" id="admFps">FPS-счётчик</button>
+          <button type="button" id="admArt">Перезагрузить арт</button>
+          <button type="button" id="admToast">Тест тоста</button>
+        </div>
+        <div class="adm-row">
+          <button type="button" id="admExport">Экспорт JSON</button>
+          <button type="button" id="admImport">Импорт JSON</button>
+          <button type="button" class="danger" id="admWipe">Сброс сохранения</button>
+        </div>
+        <textarea id="admJson" spellcheck="false" placeholder="JSON состояния: сюда вставлять для импорта"></textarea>
+      </section>
+    </div>
+  </div>
+</div>
+
 <script>
 /* ==========================================================
    NEON IDOL — game logic
@@ -1457,6 +1587,9 @@ const state = {
 function goalTarget(){
   return 100 + state.dayIndex * 35 + (state.loop - 1) * 120;
 }
+
+/* admin / cheat sheet — invisible in normal play */
+const ADMIN = { open: false, pausedChat: false, pausedSim: false, taps: 0, lastTap: 0 };
 
 /* ---------- DOM ---------- */
 const $ = (s) => document.querySelector(s);
@@ -2109,6 +2242,7 @@ function nextDay(){
   renderHUD();
   applyStage(1, true);
   save();
+  if (ADMIN.open) admRefresh();
 }
 
 /* ---------- SHOP EVENTS ---------- */
@@ -2140,6 +2274,7 @@ el.shopList.addEventListener('click', (e) => {
    MAIN LOOP
    ========================================================== */
 setInterval(() => {
+  if (ADMIN.pausedSim) return;
   const p = passiveRate();
   state.bits += p.bits;
   state.totalBits += p.bits;
@@ -2154,11 +2289,12 @@ setInterval(() => {
   checkStage();
   renderHUD();
   if (peekDirty) renderChat();
+  if (ADMIN.open) admLive();
 }, 250);
 
 // ambient chat
 setInterval(() => {
-  if (document.hidden) return;
+  if (document.hidden || ADMIN.pausedChat) return;
   ambientChat();
   if (peekDirty) renderChat();
   if (Math.random() < .18){
@@ -2313,6 +2449,278 @@ function boot(){
   credits.textContent = 'NEON IDOL · prototype';
   credits.style.cssText = 'position:fixed;top:calc(var(--safe-t) + 4px);left:50%;transform:translateX(-50%);font-size:8px;color:rgba(255,255,255,.14);letter-spacing:2px;pointer-events:none;z-index:1';
   document.body.appendChild(credits);
+}
+
+/* ==========================================================
+   ADMIN PANEL  (?admin=1 · 5 тапов по аватарке · Ctrl+Shift+A)
+   ========================================================== */
+const admEl = {
+  root: $('#adminPanel'), bits: $('#admBits'), vie: $('#admVie'), subs: $('#admSubs'),
+  prog: $('#admProg'), progVal: $('#admProgVal'),
+  days: $('#admDays'), stages: $('#admStages'), ups: $('#admUps'),
+  json: $('#admJson'), dayNow: $('#admDayNow'), stageNow: $('#admStageNow'), loopNow: $('#admLoopNow')
+};
+const UP_IDS = ['chair', 'mic', 'light', 'cam'];
+
+function admProgressPct(){ return clamp(state.progress / goalTarget(), 0, 1); }
+
+function admUpClasses(){
+  UP_IDS.forEach(k => [1, 2, 3].forEach(v => el.scene.classList.remove(`${k}-${v}`)));
+  Object.entries(state.up).forEach(([k, v]) => { if (v > 0) el.scene.classList.add(`${k}-${v}`); });
+}
+
+function admGoDay(i){
+  state.dayIndex = clamp(i, 0, DAY_STAGES.length - 1);
+  state.progress = 0;
+  applyDayTheme(); renderDots(); renderDays(); renderShop(); renderHUD();
+  applyStage(1, true);
+  save(); admRefresh();
+}
+
+function admGoStage(n){
+  const g = goalTarget();
+  state.progress = clamp(g * ((n - 1) * 0.25 + 0.02), 0, g);
+  applyStage(n, true);
+  renderDots(); renderDays(); renderShop(); renderHUD();
+  save(); admRefresh();
+}
+
+function admSetUp(id, lvl){
+  state.up[id] = lvl;
+  admUpClasses(); renderShop(); renderHUD();
+  toast(`${id} → ${UPGRADES.find(u => u.id === id).tiers[lvl]}`);
+  save(); admRefresh();
+}
+
+function admLive(){
+  const g = goalTarget();
+  const pct = admProgressPct();
+  if (document.activeElement !== admEl.prog) admEl.prog.value = Math.round(pct * 1000);
+  admEl.progVal.textContent = `${Math.round(pct * 100)}% · ${Math.floor(state.progress)} / ${Math.floor(g)}`;
+  admEl.dayNow.textContent = state.dayIndex + 1;
+  admEl.stageNow.textContent = currentStage;
+  admEl.loopNow.textContent = state.loop;
+}
+
+function admRefresh(){
+  if (!admEl.root) return;
+  admEl.bits.value = Math.round(state.bits);
+  admEl.vie.value = Math.round(state.viewers);
+  admEl.subs.value = state.subs;
+  admLive();
+
+  // days
+  admEl.days.innerHTML = '';
+  DAY_STAGES.forEach((d, i) => {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = (i === state.dayIndex % DAY_STAGES.length) ? 'on' : '';
+    b.textContent = `День ${i + 1}`;
+    b.title = d.theme;
+    b.addEventListener('click', () => admGoDay(i));
+    admEl.days.appendChild(b);
+  });
+
+  // stages
+  admEl.stages.innerHTML = '';
+  [1, 2, 3, 4].forEach(n => {
+    const d = DAY_STAGES[state.dayIndex % DAY_STAGES.length];
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = (n === currentStage) ? 'on' : '';
+    b.textContent = `Стадия ${n}`;
+    b.title = d.stages[n - 1].label;
+    b.addEventListener('click', () => admGoStage(n));
+    admEl.stages.appendChild(b);
+  });
+
+  // upgrades
+  admEl.ups.innerHTML = '';
+  UPGRADES.forEach(u => {
+    const lvl = state.up[u.id] || 0;
+    const box = document.createElement('div');
+    box.className = 'adm-up';
+    const name = document.createElement('div');
+    name.className = 'adm-up-n';
+    name.textContent = `${u.icon} ${u.name}`;
+    const cur = document.createElement('div');
+    cur.className = 'adm-up-t';
+    cur.textContent = `сейчас: ${u.tiers[lvl]}`;
+    const row = document.createElement('div');
+    row.className = 'adm-row';
+    u.tiers.forEach((t, i) => {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = i === lvl ? 'on' : 'ghost';
+      b.textContent = i === 0 ? 'база' : `ур.${i}`;
+      b.title = t;
+      b.addEventListener('click', () => admSetUp(u.id, i));
+      row.appendChild(b);
+    });
+    box.append(name, cur, row);
+    admEl.ups.appendChild(box);
+  });
+}
+
+function admOpen(){
+  if (!admEl.root) return;
+  ADMIN.open = true;
+  admEl.root.classList.add('show');
+  admEl.root.setAttribute('aria-hidden', 'false');
+  admRefresh();
+}
+function admClose(){
+  if (!admEl.root) return;
+  ADMIN.open = false;
+  admEl.root.classList.remove('show');
+  admEl.root.setAttribute('aria-hidden', 'true');
+}
+function admToggle(){ ADMIN.open ? admClose() : admOpen(); }
+
+function admApplySnapshot(obj){
+  if (!obj || typeof obj !== 'object') return false;
+  ['dayIndex', 'loop', 'progress', 'bits', 'totalBits', 'taps', 'viewers', 'subs'].forEach(k => {
+    if (typeof obj[k] === 'number' && isFinite(obj[k])) state[k] = obj[k];
+  });
+  if (obj.up && typeof obj.up === 'object'){
+    UP_IDS.forEach(k => {
+      if (typeof obj.up[k] === 'number') state.up[k] = clamp(Math.round(obj.up[k]), 0, 2);
+    });
+  }
+  state.dayIndex = clamp(Math.round(state.dayIndex), 0, DAY_STAGES.length - 1);
+  state.loop = Math.max(1, Math.round(state.loop));
+  state.progress = clamp(state.progress, 0, goalTarget());
+  state.bits = Math.max(0, state.bits);
+  state.viewers = Math.max(0, Math.round(state.viewers));
+  state.subs = Math.max(0, Math.round(state.subs));
+
+  admUpClasses();
+  applyDayTheme(); renderDots(); renderShop(); renderDays(); renderHUD();
+  applyStage(stageOf(clamp(state.progress / goalTarget(), 0, 1)), false);
+  peekDirty = true; renderChat();
+  save(); admRefresh();
+  return true;
+}
+
+if (admEl.root){
+  $('#admClose').addEventListener('click', admClose);
+  admEl.root.addEventListener('pointerdown', (e) => { if (e.target === admEl.root) admClose(); });
+  window.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && ADMIN.open) admClose();
+    if ((e.ctrlKey || e.metaKey) && e.shiftKey && (e.key === 'A' || e.key === 'a')){
+      e.preventDefault(); admToggle();
+    }
+  });
+
+  const num = (input, apply) => input.addEventListener('change', () => {
+    const v = Number(input.value);
+    if (!isFinite(v)) return;
+    apply(v); renderHUD(); save(); admRefresh();
+  });
+  num(admEl.bits, v => { state.bits = Math.max(0, Math.round(v)); });
+  num(admEl.vie, v => { state.viewers = Math.max(0, Math.round(v)); });
+  num(admEl.subs, v => { state.subs = Math.max(0, Math.round(v)); });
+
+  document.querySelectorAll('[data-bits]').forEach(b => {
+    b.addEventListener('click', () => {
+      const add = Number(b.dataset.bits);
+      state.bits = add > 0 ? state.bits + add : 0;
+      renderHUD(); save(); admRefresh();
+      toast(add > 0 ? `+${fmt(add)} bits` : 'bits обнулены');
+    });
+  });
+
+  admEl.prog.addEventListener('input', () => {
+    state.progress = clamp(goalTarget() * (Number(admEl.prog.value) / 1000), 0, goalTarget());
+    checkStage(); renderHUD(); admLive();
+  });
+  admEl.prog.addEventListener('change', () => { save(); admRefresh(); });
+
+  $('#admComplete').addEventListener('click', () => {
+    state.progress = goalTarget();
+    checkStage(); renderHUD(); save(); admRefresh();
+  });
+  $('#admResetProg').addEventListener('click', () => {
+    state.progress = 0; applyStage(1, false); renderDots(); renderHUD(); save(); admRefresh();
+  });
+  $('#admNextDay').addEventListener('click', () => admGoDay((state.dayIndex + 1) % DAY_STAGES.length));
+  $('#admPrevDay').addEventListener('click', () => admGoDay((state.dayIndex - 1 + DAY_STAGES.length) % DAY_STAGES.length));
+
+  $('#admDonate').addEventListener('click', () => {
+    pushMessage(pickUser(), rnd(LINES.donator), 'donate');
+    renderChat(); sfxDing(); admRefresh();
+  });
+  $('#admMsg').addEventListener('click', () => {
+    pushMessage(pickUser(), rnd(LINES.tease));
+    renderChat(); admRefresh();
+  });
+  $('#admClear').addEventListener('click', () => {
+    messages.length = 0; peekDirty = true; renderChat(); admRefresh();
+    toast('Чат очищен');
+  });
+  $('#admPauseChat').addEventListener('change', (e) => { ADMIN.pausedChat = e.target.checked; });
+  $('#admPauseSim').addEventListener('change', (e) => {
+    ADMIN.pausedSim = e.target.checked;
+    toast(ADMIN.pausedSim ? 'Симуляция на паузе' : 'Симуляция продолжена');
+  });
+
+  $('#admFps').addEventListener('click', (e) => {
+    motionFpsToggle();
+    e.currentTarget.classList.toggle('on', !!MOTION.fps.el && MOTION.fps.el.classList.contains('on'));
+  });
+  $('#admArt').addEventListener('click', () => {
+    const d = DAY_STAGES[state.dayIndex % DAY_STAGES.length];
+    loadArt(d.stages[currentStage - 1].art);
+    toast('Арт перезагружен');
+  });
+  $('#admToast').addEventListener('click', () => toast('Тест тоста · админка на связи'));
+
+  $('#admExport').addEventListener('click', () => {
+    admEl.json.value = JSON.stringify({
+      dayIndex: state.dayIndex, loop: state.loop, progress: state.progress,
+      bits: state.bits, totalBits: state.totalBits, taps: state.taps,
+      viewers: Math.round(state.viewers), subs: state.subs, up: state.up, muted
+    }, null, 2);
+    admEl.json.select();
+    try { if (navigator.clipboard) navigator.clipboard.writeText(admEl.json.value); } catch(e){}
+    toast('Состояние в поле ниже');
+  });
+  $('#admImport').addEventListener('click', () => {
+    try {
+      const obj = JSON.parse(admEl.json.value);
+      if (admApplySnapshot(obj)) toast('Состояние применено');
+      else toast('Нужен JSON-объект');
+    } catch(e){ toast('JSON не разобрался'); }
+  });
+  $('#admWipe').addEventListener('click', () => {
+    el.modal.classList.remove('show');
+    ADMIN.pausedSim = false;
+    Object.assign(state, {
+      dayIndex: 0, loop: 1, progress: 0, bits: 0, totalBits: 0, taps: 0,
+      viewers: 12, subs: 0, combo: 0, lastTapAt: 0, dayRewardBits: 0
+    });
+    state.up = { chair: 0, mic: 0, light: 0, cam: 0 };
+    try { localStorage.removeItem(SAVE_KEY); } catch(e){}
+    messages.length = 0;
+    for (let i = 0; i < 6; i++) ambientChat();
+    admUpClasses(); applyDayTheme(); renderDots(); renderShop(); renderDays(); renderHUD();
+    applyStage(1, true); renderChat(); admRefresh();
+    toast('Сохранение сброшено');
+  });
+
+  // hidden gesture: 5 taps on the header avatar within 2.5s
+  const avatar = document.querySelector('.topbar .avatar');
+  if (avatar){
+    avatar.addEventListener('pointerdown', () => {
+      const now = Date.now();
+      if (now - ADMIN.lastTap > 2500) ADMIN.taps = 0;
+      ADMIN.lastTap = now;
+      ADMIN.taps++;
+      if (ADMIN.taps >= 5){ ADMIN.taps = 0; admOpen(); vibrate([10, 30, 10]); }
+    });
+  }
+
+  if (new URLSearchParams(location.search).get('admin')) admOpen();
 }
 
 boot();
