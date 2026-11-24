@@ -963,50 +963,55 @@ main{
   align-items:flex-end; justify-content:center;
   padding-bottom:2%;
 }
+/* стопка: габариты спрайта, внутри — кадр, проп груди и румянец */
+.hero .art-stack{
+  position:relative; height:90%; aspect-ratio:3/4; max-height:100%;
+  flex:0 0 auto; pointer-events:none;
+}
 .hero .art-img{
-  position:relative; inset:auto; margin:0;
-  height:90%; width:auto; max-width:none; max-height:100%;
+  position:absolute; inset:0; width:100%; height:100%;
   object-fit:contain; object-position:50% 100%;
-  padding:0; background:transparent;
-  filter:drop-shadow(0 18px 40px rgba(0,0,0,.55));
+  padding:0; background:transparent; border:0;
   opacity:0; transition:opacity .35s ease;
-  flex:0 0 auto;
 }
 .hero .art-img.on{ opacity:1; }
-.hero .art-img{ will-change:opacity; }
-/* передний план: столешница пиксель в пиксель с фоном, выше героини */
+/* грудь: отдельный маленький проп (720 px, маска запечена в альфу).
+   20-мегапиксельная копия кадра под CSS-маской убивала fps — здесь её нет. */
 .hero .art-chest{
-  position:absolute; left:50%; bottom:2%; height:90%; aspect-ratio:3/4; max-height:100%;
-  transform:translateX(-50%); z-index:2;
-  pointer-events:none; opacity:0; transition:opacity .35s ease;
+  position:absolute; left:22%; top:12%; width:56%; height:38%;
+  background-position:50% 50%; background-size:100% 100%; background-repeat:no-repeat;
+  z-index:2; pointer-events:none; transform-origin:50% 32%;
+  opacity:0; transition:opacity .3s ease;
   will-change:transform;
-  -webkit-mask-image:radial-gradient(ellipse var(--rx,14%) var(--ry,7%) at var(--cx,50%) var(--cy,30%),
-    #000 0%, #000 40%, rgba(0,0,0,0) 88%);
-  mask-image:radial-gradient(ellipse var(--rx,14%) var(--ry,7%) at var(--cx,50%) var(--cy,30%),
-    #000 0%, #000 40%, rgba(0,0,0,0) 88%);
-  -webkit-mask-repeat:no-repeat; mask-repeat:no-repeat;
 }
 .hero .art-chest.on{ opacity:1; }
-#scene.stage-2 .art-chest{ --cy:30%; --rx:14%; --ry:7%; }
-#scene.stage-3 .art-chest{ --cy:27%; --rx:13%; --ry:6.5%; }
-#scene.stage-4 .art-chest{ bottom:16.5%; height:80%; --cy:33%; --rx:15%; --ry:7.5%; }
 
-/* грудь проседает и пружинит — видно и приятно */
+/* грудь проседает, сплющивается и пружинит обратно */
 @keyframes chestJiggle{
-  0%   { transform:translateX(-50%) translateY(0)     scaleY(1); }
-  14%  { transform:translateX(-50%) translateY(2.6%)  scaleY(1.035); }
-  34%  { transform:translateX(-50%) translateY(-1.1%) scaleY(0.985); }
-  54%  { transform:translateX(-50%) translateY(0.55%) scaleY(1.012); }
-  74%  { transform:translateX(-50%) translateY(-0.22%) scaleY(0.996); }
-  100% { transform:translateX(-50%) translateY(0)     scaleY(1); }
+  0%   { transform:translateY(0)     scale(1, 1); }
+  11%  { transform:translateY(7.5%)  scale(1.028, 1.05); }
+  29%  { transform:translateY(-3.4%) scale(0.986, 0.962); }
+  47%  { transform:translateY(1.9%)  scale(1.011, 1.018); }
+  65%  { transform:translateY(-0.9%) scale(0.995, 0.993); }
+  82%  { transform:translateY(0.4%)  scale(1.003, 1.004); }
+  100% { transform:translateY(0)     scale(1, 1); }
 }
-.hero .art-chest.hit{ animation:chestJiggle .62s cubic-bezier(.22,.72,.3,1); }
-@media (prefers-reduced-motion: reduce){ .hero .art-chest.hit{ animation:none; } }
+.hero .art-chest.hit{ animation:chestJiggle .68s cubic-bezier(.2,.7,.25,1); }
+/* дыхание: на 4-й стадии грудь тяжелее — дышит заметнее */
+@keyframes chestBreathe{
+  0%,100% { transform:translateY(0)    scale(1, 1); }
+  50%     { transform:translateY(.5%)  scale(1, 1.008); }
+}
+.hero .art-chest.breathe{ animation:chestBreathe var(--breathe,4.6s) ease-in-out infinite; }
+.hero .art-chest.hit.breathe{ animation:chestJiggle .68s cubic-bezier(.2,.7,.25,1); }
+@media (prefers-reduced-motion: reduce){
+  .hero .art-chest.hit, .hero .art-chest.breathe,
+  .hero .art-chest.hit.breathe{ animation:none; }
+}
 
 /* румянец: два мягких пятна на щеках, сила зависит от «смущения» */
 .hero .art-blush{
-  position:absolute; left:50%; bottom:2%; height:90%; aspect-ratio:3/4;
-  transform:translateX(-50%); z-index:3; pointer-events:none;
+  position:absolute; inset:0; z-index:3; pointer-events:none;
   opacity:0; transition:opacity .3s ease; mix-blend-mode:soft-light;
   background-repeat:no-repeat;
   background-image:
@@ -1016,7 +1021,7 @@ main{
       rgba(255,60,95,.95) 0%, rgba(255,70,105,.55) 45%, rgba(255,80,110,0) 78%);
 }
 #scene.stage-3 .art-blush{ --c1y:15%; --c2y:15%; --c1x:43.8%; --c2x:56.2%; --cr:4.4% 2.9%; }
-#scene.stage-4 .art-blush{ bottom:16.5%; height:80%; --c1x:41.5%; --c2x:58.5%; --c1y:21%; --c2y:21%; --cr:5.4% 3.4%; }
+#scene.stage-4 .art-blush{ --c1x:41.5%; --c2x:58.5%; --c1y:21%; --c2y:21%; --cr:5.4% 3.4%; }
 .hero .art-blush.bump{ animation:blushBump .5s ease-out; }
 @keyframes blushBump{ 0%{ filter:brightness(1) } 30%{ filter:brightness(1.35) } 100%{ filter:brightness(1) } }
 
@@ -1030,7 +1035,7 @@ main{
 /* поза 4: камера ближе, стол уходит из кадра */
 /* стадия 4: она отодвигается назад и задирает ножки — ступни ложатся на кромку стола */
 #scene.stage-4 .art-tap{ padding-bottom:16.5%; }
-#scene.stage-4 .art-img{ height:80%; max-height:none; }
+#scene.stage-4 .art-stack{ height:80%; }
 
 .hero-glow{
   position:absolute; left:-10%; right:-10%; bottom:-6%; height:62%; z-index:2; pointer-events:none;
@@ -1187,21 +1192,29 @@ main{
     <!-- ================= TAB: STREAM (heroine-first) ================= -->
     <section class="tab-panel active" id="tab-stream">
       <div class="hero" id="scene">
-        <img class="art-bg" id="artBg" src="assets/room_day1.webp" alt="" aria-hidden="true" />
+        <img class="art-bg" id="artBg" src="assets/room_day1.webp"
+             srcset="assets/room_day1_sm.webp 1200w, assets/room_day1.webp 4532w" sizes="100vw"
+             decoding="async" alt="" aria-hidden="true" />
         <div class="hero-glow" aria-hidden="true"></div>
         <div class="hero-mic" aria-hidden="true"></div>
 
         <div class="art-lean" id="artLean">
           <div class="art-tap" id="artTap">
-            <img class="art-img" id="artImg" alt="" />
-            <!-- физика груди: копия кадра с мягкой маской, двигается только на тап -->
-            <img class="art-chest" id="artChest" alt="" aria-hidden="true" />
-            <div class="art-blush" id="artBlush" aria-hidden="true"></div>
+            <!-- «стопка» ровно по габаритам спрайта: всё внутри позиционируется в % кадра -->
+            <div class="art-stack" id="artStack">
+              <img class="art-img" id="artImg" alt="" decoding="async"
+                   sizes="(max-width: 520px) 370px, 540px" />
+              <!-- грудь: маленький проп из того же кадра с запечённой мягкой маской -->
+              <div class="art-chest" id="artChest" aria-hidden="true"></div>
+              <div class="art-blush" id="artBlush" aria-hidden="true"></div>
+            </div>
           </div>
         </div>
 
         <!-- передний план: столешница, вырезанная из того же кадра, что и комната -->
-        <img class="art-desk" id="artDesk" src="assets/room_fg.webp" alt="" aria-hidden="true" />
+        <img class="art-desk" id="artDesk" src="assets/room_fg.webp"
+             srcset="assets/room_fg_sm.webp 1200w, assets/room_fg.webp 4532w" sizes="100vw"
+             decoding="async" alt="" aria-hidden="true" />
 
         <canvas id="fx"></canvas>
         <div class="flash" id="flash"></div>
@@ -1312,7 +1325,7 @@ main{
             <div class="n">Как подставить манхву</div>
             <div class="t">
               День 1 уже подключён: <span style="font-family:monospace">assets/art_day1_sg1…sg4.webp</span>
-              — кадры «она в кресле»: ACNet ×4 → мастер 5K 3:4 (3840×5120, ~0.7–0.9 МБ на кадр). Путь к кадру задаётся полем <b>art</b>
+              — кадры «она в кресле»: ACNet ×4 → мастер 5K 3:4 (3840×5120, ~0.7–0.9 МБ на кадр); в игре на телефоне отдаётся облегчённый набор 1170×1560 — 60 fps важнее лишних пикселей. Путь к кадру задаётся полем <b>art</b>
               в массиве <b>DAY_STAGES</b>. Если файла нет — показывается стилизованная SVG-заглушка.
               <button class="fps-btn" id="fpsToggle" type="button">FPS-счётчик</button>
             </div>
@@ -1667,7 +1680,7 @@ const ADMIN = { open: false, pausedChat: false, pausedSim: false, taps: 0, lastT
 /* ---------- DOM ---------- */
 const $ = (s) => document.querySelector(s);
 const el = {
-  scene: $('#scene'), char: $('#char'), artImg: $('#artImg'), artChest: $('#artChest'), artBg: $('#artBg'), artDesk: $('#artDesk'), fx: $('#fx'),
+  scene: $('#scene'), char: $('#char'), artImg: $('#artImg'), artChest: $('#artChest'), artStack: $('#artStack'), artBg: $('#artBg'), artDesk: $('#artDesk'), fx: $('#fx'),
   bits: $('#bitsCount'), viewers: $('#viewerCount'), viewersPill: $('#viewersPill'),
   subs: $('#subCount'), chatOnline: $('#chatOnline'),
   stageTitle: $('#stageTitle'), stageSub: $('#stageSub'), goalText: $('#goalText'),
@@ -1733,6 +1746,9 @@ function blushApply(){
   const b = document.getElementById('artBlush');
   if (!b) return;
   b.style.opacity = (0.10 + (BLUSH.v / 100) * 0.62).toFixed(3);
+  /* чем сильнее смущение — тем чаще и глубже дыхание */
+  const c = document.getElementById('artChest');
+  if (c) c.style.setProperty('--breathe', (5.4 - 1.9 * (BLUSH.v / 100)).toFixed(2) + 's');
 }
 
 function blushAdd(x){
@@ -1994,7 +2010,7 @@ function sfxWhoosh(){
    ========================================================== */
 const canvas = el.fx;
 const ctx = canvas.getContext('2d');
-let DPR = Math.min(window.devicePixelRatio || 1, 2.5);
+let DPR = Math.min(window.devicePixelRatio || 1, 2);
 let W = 0, H = 0;
 const particles = [];
 const MAX_P = 130;
@@ -2002,7 +2018,7 @@ const MAX_P = 130;
 function resizeCanvas(){
   const r = el.scene.getBoundingClientRect();
   W = Math.max(1, r.width); H = Math.max(1, r.height);
-  DPR = Math.min(window.devicePixelRatio || 1, 2.5);
+  DPR = Math.min(window.devicePixelRatio || 1, 2);
   canvas.width = Math.floor(W * DPR);
   canvas.height = Math.floor(H * DPR);
   ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
@@ -2062,20 +2078,14 @@ function loopFX(t){
       particles.splice(i, 1);
       continue;
     }
-    ctx.save();
+    const sz = p.kind === 'heart' ? p.size * (0.7 + p.life * .5) * 3.4 : p.size * 2.6;
+    const spr = p.kind === 'heart' ? sprHeartFor(p.color) : sprCoin;
     ctx.globalAlpha = clamp(p.life, 0, 1);
+    ctx.save();
     ctx.translate(p.x, p.y);
     ctx.rotate(p.rot);
-    if (p.kind === 'heart'){
-      drawHeart(p.size * (0.7 + p.life * .5), p.color);
-    } else {
-      ctx.beginPath();
-      ctx.arc(0, 0, p.size * .62, 0, Math.PI * 2);
-      ctx.fillStyle = '#ffcd4a';
-      ctx.shadowColor = '#ffcd4a';
-      ctx.shadowBlur = 8;
-      ctx.fill();
-    }
+    /* drawImage готового спрайта: без path/shadowBlur на каждой частице */
+    ctx.drawImage(spr, -sz/2, -sz/2, sz, sz);
     ctx.restore();
   }
   if (particles.length){ requestAnimationFrame(loopFX); }
@@ -2091,6 +2101,39 @@ function drawHeart(s, color){
   ctx.shadowColor = color;
   ctx.shadowBlur = 10;
   ctx.fill();
+}
+
+/* готовые спрайты частиц: рисуем сердце и монетку по одному разу */
+function makeHeartSprite(color){
+  const c = document.createElement('canvas');
+  c.width = c.height = 96;
+  const g = c.getContext('2d');
+  g.translate(48, 48);
+  g.shadowColor = color; g.shadowBlur = 14;
+  g.fillStyle = color;
+  g.beginPath();
+  g.moveTo(0, 26);
+  g.bezierCurveTo(-40, -14, -20, -40, 0, -15);
+  g.bezierCurveTo(20, -40, 40, -14, 0, 26);
+  g.closePath();
+  g.fill(); g.fill();   /* второй проход усиливает свечение */
+  return c;
+}
+function makeCoinSprite(){
+  const c = document.createElement('canvas');
+  c.width = c.height = 64;
+  const g = c.getContext('2d');
+  g.shadowColor = '#ffcd4a'; g.shadowBlur = 12;
+  g.fillStyle = '#ffcd4a';
+  g.beginPath(); g.arc(32, 32, 16, 0, Math.PI*2); g.fill(); g.fill();
+  return c;
+}
+const sprCoin = makeCoinSprite();
+const sprHeartCache = new Map();
+function sprHeartFor(color){
+  let sp = sprHeartCache.get(color);
+  if (!sp){ sp = makeHeartSprite(color); sprHeartCache.set(color, sp); }
+  return sp;
 }
 
 /* ==========================================================
@@ -2156,29 +2199,52 @@ function applyStage(stage, announce){
   }
 }
 
+/* --- сколько пикселей реально нужно экрану: 5K грузим только там, где он виден --- */
+function artNeedPx(){
+  const box = el.artStack ? el.artStack.getBoundingClientRect() : null;
+  const w = (box && box.width) || 400;
+  return w * Math.min(window.devicePixelRatio || 1, 3);
+}
+function artVariant(src){
+  return (artNeedPx() > 1400 && window.innerWidth > 900) ? src : src.replace('.webp', '_sm.webp');
+}
+
 /* прогрев комнаты и переднего плана стола: они грузятся первыми */
 let artToken = 0;
-['assets/room_day1.webp', 'assets/room_fg.webp'].forEach(src => { const i = new Image(); i.src = src; });
+['room_day1', 'room_fg'].forEach(n => {
+  const i = new Image();
+  i.src = (window.matchMedia('(max-width: 520px)').matches || !window.devicePixelRatio || window.devicePixelRatio < 2)
+    ? `assets/${n}_sm.webp` : `assets/${n}.webp`;
+});
 function loadArt(src){
   artToken++;
   const token = artToken;
   el.artImg.classList.remove('on');
+  const sm = src.replace('.webp', '_sm.webp');
   const probe = new Image();
   probe.onload = () => {
     if (token !== artToken) return;
+    /* srcset отдаёт телефонам лёгкий кадр, 5K остаётся большим экранам */
+    el.artImg.srcset = `${sm} 1170w, ${src} 3840w`;
     el.artImg.src = src;
     el.artImg.classList.add('on');
-    if (el.artChest) { el.artChest.src = src; el.artChest.classList.add('on'); }
+    const chest = el.artChest;
+    const tag = (src.match(/sg\d/) || [])[0];
+    if (chest){
+      chest.style.backgroundImage = tag ? `url("assets/chest_${tag}.webp")` : '';
+      chest.classList.toggle('on', !!tag);
+      chest.classList.toggle('breathe', tag === 'sg3' || tag === 'sg4');
+    }
     motionSync(src);
   };
   probe.onerror = () => {
     if (token !== artToken) return;
     el.artImg.classList.remove('on');
     el.artImg.removeAttribute('src');
-    if (el.artChest) { el.artChest.classList.remove('on','hit'); el.artChest.removeAttribute('src'); }
+    if (el.artChest){ el.artChest.classList.remove('on', 'hit', 'breathe'); el.artChest.style.backgroundImage = ''; }
     motionSync('');
   };
-  probe.src = src;
+  probe.src = artVariant(src);
 }
 
 /* ==========================================================
