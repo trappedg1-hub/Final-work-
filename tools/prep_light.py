@@ -31,6 +31,30 @@ def shrink(src, dest, size):
     print(f'{os.path.basename(dest)} {size} {os.path.getsize(dest)/1e6:.2f} MB')
 
 
+def punch_hole(tag):
+    """Вырезаем в базовом кадре окно под грудью.
+
+    Без этого патч, уезжая, оставляет под собой старые пиксели — виден
+    гостинг (двойной контур). Окно меньше патча (82 % эллипса), поэтому
+    край окна всегда закрыт непрозрачной серединой патча.
+    """
+    cx, cy, rx, ry = MASK[tag]
+    for name in (f'art_day1_{tag}.webp', f'art_day1_{tag}_sm.webp'):
+        path = os.path.join(A, name)
+        im = Image.open(path).convert('RGBA')
+        W, H = im.size
+        m = Image.new('L', (W, H), 0)
+        k = 0.58
+        box = [int((cx-rx*k)*W), int((cy-ry*k)*H), int((cx+rx*k)*W), int((cy+ry*k)*H)]
+        ImageDraw.Draw(m).ellipse(box, fill=255)
+        m = m.filter(ImageFilter.GaussianBlur(max(2, int(min(rx*k*W, ry*k*H)*0.06))))
+        arr = np.array(im)
+        arr[..., 3] = (arr[..., 3].astype(np.float32) * (1 - np.array(m).astype(np.float32)/255)).astype('uint8')
+        Image.fromarray(arr, 'RGBA').save(path, 'WEBP', quality=90 if 'sm' not in name else 86,
+                                          alpha_quality=100, method=6)
+        print(f'окно: {name} {W}x{H} {os.path.getsize(path)/1e6:.2f} MB')
+
+
 def chest_patch(tag):
     im = Image.open(os.path.join(A, f'art_day1_{tag}.webp')).convert('RGBA')
     W, H = im.size
@@ -48,11 +72,14 @@ def chest_patch(tag):
     mrx = rx / (x1 - x0) * mw
     mry = ry / (y1 - y0) * mh
 
+    # жёсткое ядро + растушёвка только по внешнему кольцу:
+    # иначе у края патч полупрозрачный и под ним просвечивает «окно»
     mask = Image.new('L', (mw, mh), 0)
-    d = ImageDraw.Draw(mask)
-    d.ellipse([mx-mrx, my-mry, mx+mrx, my+mry], fill=255)
-    mask = mask.filter(ImageFilter.GaussianBlur(max(3, int(min(mrx, mry)*0.75))))
-    mask = Image.fromarray(np.clip((np.array(mask).astype(np.float32)-6)/249*255, 0, 255).astype('uint8'))
+    ImageDraw.Draw(mask).ellipse([mx-mrx, my-mry, mx+mrx, my+mry], fill=255)
+    soft = mask.filter(ImageFilter.GaussianBlur(max(2, int(min(mrx, mry)*0.24))))
+    core = Image.new('L', (mw, mh), 0)
+    ImageDraw.Draw(core).ellipse([mx-mrx*0.70, my-mry*0.86, mx+mrx*0.70, my+mry*0.86], fill=255)
+    mask = Image.fromarray(np.maximum(np.array(soft), np.array(core)))
 
     arr = np.array(crop)
     arr[..., 3] = (np.array(mask).astype(np.float32) * (arr[..., 3].astype(np.float32)/255)).astype('uint8')
@@ -66,6 +93,7 @@ if __name__ == '__main__':
     if only_chest:
         for tag in ('sg1', 'sg2', 'sg3', 'sg4'):
             chest_patch(tag)
+            punch_hole(tag)
         sys.exit(0)
     for tag in ('sg1', 'sg2', 'sg3', 'sg4'):
         shrink(os.path.join(A, f'art_day1_{tag}.webp'), os.path.join(A, f'art_day1_{tag}_sm.webp'), SM_SPRITE)
