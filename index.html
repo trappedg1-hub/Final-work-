@@ -896,7 +896,7 @@ main{
 .hero .art-tap{ position:absolute; inset:0; }
 .hero .art-img{
   position:absolute; left:50%; bottom:0;
-  height:94%; width:auto; max-width:none; max-height:none;
+  height:96%; width:auto; max-width:none; max-height:none;
   transform:translateX(-50%);
   object-fit:contain; object-position:50% 100%;
   padding:0; background:transparent;
@@ -905,7 +905,7 @@ main{
 }
 .hero .art-img.on{ opacity:1; }
 .hero .art-img{ will-change:opacity; }
-#scene.stage-4 .art-img{ height:89%; }
+#scene.stage-4 .art-img{ height:91%; }
 
 .hero-glow{
   position:absolute; left:-10%; right:-10%; bottom:-6%; height:62%; z-index:2; pointer-events:none;
@@ -2049,7 +2049,7 @@ function renderShop(){
         <div class="pips">${u.tiers.map((_, i) => `<i class="${i <= lvl ? 'on' : ''}"></i>`).join('')}</div>
       </div>
       <button class="buy ${maxed ? 'max' : ''}" ${maxed || !affordable ? 'disabled' : ''} data-up="${u.id}">
-        ${maxed ? 'MAX' : `⬢ ${fmt(price)}`}
+        ${maxed ? 'MAX' : `💎 ${fmt(price)}`}
       </button>`;
     el.shopList.appendChild(card);
   });
