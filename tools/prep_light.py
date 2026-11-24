@@ -5,6 +5,7 @@
 потому что 20-мегапиксельные текстуры + копия кадра под маску убивают FPS.
 """
 import os
+import sys
 import numpy as np
 from PIL import Image, ImageDraw, ImageFilter
 
@@ -17,10 +18,10 @@ SM_ROOM = (1200, 1356)
 CHEST_BOX = (0.22, 0.12, 0.78, 0.50)   # единый кроп для всех стадий (left, top, right, bottom)
 CHEST_W = 720
 MASK = {                                # центр и радиусы эллипса в долях кадра спрайта
-    'sg1': (0.50, 0.30, 0.14, 0.070),
-    'sg2': (0.50, 0.30, 0.14, 0.070),
-    'sg3': (0.50, 0.27, 0.13, 0.065),
-    'sg4': (0.50, 0.33, 0.15, 0.075),
+    'sg1': (0.525, 0.375, 0.085, 0.052),   # кофта, бюст под тканью
+    'sg2': (0.520, 0.385, 0.090, 0.052),
+    'sg3': (0.520, 0.360, 0.095, 0.055),   # топ, открытая грудь
+    'sg4': (0.520, 0.370, 0.100, 0.058),   # откинулась, грудь крупнее в кадре
 }
 
 
@@ -50,7 +51,7 @@ def chest_patch(tag):
     mask = Image.new('L', (mw, mh), 0)
     d = ImageDraw.Draw(mask)
     d.ellipse([mx-mrx, my-mry, mx+mrx, my+mry], fill=255)
-    mask = mask.filter(ImageFilter.GaussianBlur(max(3, int(min(mrx, mry)*0.55))))
+    mask = mask.filter(ImageFilter.GaussianBlur(max(3, int(min(mrx, mry)*0.75))))
     mask = Image.fromarray(np.clip((np.array(mask).astype(np.float32)-6)/249*255, 0, 255).astype('uint8'))
 
     arr = np.array(crop)
@@ -61,6 +62,11 @@ def chest_patch(tag):
 
 
 if __name__ == '__main__':
+    only_chest = '--chest' in sys.argv
+    if only_chest:
+        for tag in ('sg1', 'sg2', 'sg3', 'sg4'):
+            chest_patch(tag)
+        sys.exit(0)
     for tag in ('sg1', 'sg2', 'sg3', 'sg4'):
         shrink(os.path.join(A, f'art_day1_{tag}.webp'), os.path.join(A, f'art_day1_{tag}_sm.webp'), SM_SPRITE)
         chest_patch(tag)

@@ -995,21 +995,22 @@ main{
 /* грудь проседает, сплющивается и пружинит обратно */
 @keyframes chestJiggle{
   0%   { transform:translateY(0)     scale(1, 1); }
-  11%  { transform:translateY(7.5%)  scale(1.028, 1.05); }
-  29%  { transform:translateY(-3.4%) scale(0.986, 0.962); }
-  47%  { transform:translateY(1.9%)  scale(1.011, 1.018); }
-  65%  { transform:translateY(-0.9%) scale(0.995, 0.993); }
-  82%  { transform:translateY(0.4%)  scale(1.003, 1.004); }
+  10%  { transform:translateY(1.1%)  scale(1.003, 1.005); }
+  26%  { transform:translateY(3.2%)  scale(1.009, 1.019); }
+  44%  { transform:translateY(-1.4%) scale(0.995, 0.991); }
+  60%  { transform:translateY(0.8%)  scale(1.004, 1.006); }
+  76%  { transform:translateY(-0.38%) scale(0.9986, 0.9978); }
+  89%  { transform:translateY(0.15%) scale(1.0009, 1.0011); }
   100% { transform:translateY(0)     scale(1, 1); }
 }
-.hero .art-chest.hit{ animation:chestJiggle .68s cubic-bezier(.2,.7,.25,1); }
+.hero .art-chest.hit{ animation:chestJiggle .95s cubic-bezier(.26,.72,.3,1); }
 /* дыхание: на 4-й стадии грудь тяжелее — дышит заметнее */
 @keyframes chestBreathe{
-  0%,100% { transform:translateY(0)    scale(1, 1); }
-  50%     { transform:translateY(.5%)  scale(1, 1.008); }
+  0%,100% { transform:translateY(0)     scale(1, 1); }
+  50%     { transform:translateY(.35%)  scale(1, 1.006); }
 }
 .hero .art-chest.breathe{ animation:chestBreathe var(--breathe,4.6s) ease-in-out infinite; }
-.hero .art-chest.hit.breathe{ animation:chestJiggle .68s cubic-bezier(.2,.7,.25,1); }
+.hero .art-chest.hit.breathe{ animation:chestJiggle .95s cubic-bezier(.26,.72,.3,1); }
 @media (prefers-reduced-motion: reduce){
   .hero .art-chest.hit, .hero .art-chest.breathe,
   .hero .art-chest.hit.breathe{ animation:none; }
@@ -1786,7 +1787,7 @@ const EMO_TEST = /emo=(test|hold)/.test(location.search);
 function emoSchedule(){
   clearTimeout(EMO.blinkTimer);
   if (!EMO.tag) return;
-  const wait = EMO_TEST ? 900 : 2600 + Math.random() * 4200;
+  const wait = EMO_TEST ? 900 : 3000 + Math.random() * 4500;
   EMO.blinkTimer = setTimeout(() => { emoBlink(); emoSchedule(); }, wait);
 }
 
@@ -1861,8 +1862,9 @@ function motionTap(power){
   if (MOTION.reduced) return;
   chestHit();
   blushAdd(power >= 0.9 ? 26 : 7.5);
-  if (power >= 0.9){ emoBlink(135); emoSmile(true, 2400); }
-  else emoBlink();
+  /* тап = эмоция: стеснительная улыбка вспыхивает и гаснет; моргание живёт отдельно */
+  if (power >= 0.9) emoSmile(true, 2600);
+  else emoSmile(true, 900 + Math.random() * 500);
   if (power >= 0.9) motionLean(1500);
 }
 
