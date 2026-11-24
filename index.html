@@ -199,7 +199,7 @@ main{
    TWITCH iOS SHELL (overrides)
    ============================================================ */
 .topbar{
-  gap:10px; padding:10px 14px 9px;
+  gap:8px; padding:10px 12px 9px;
   background:#18181b; border-bottom:1px solid rgba(255,255,255,.06);
 }
 .avatar{ width:40px; height:40px; padding:2px;
@@ -213,7 +213,13 @@ main{
 .channel .meta b{ color:#efeff1; }
 .icon-btn{ width:36px; height:36px; border-radius:50%; background:#26262c; font-size:15px;
   display:grid; place-items:center; }
-.balance{ background:#26262c; border-radius:999px; padding:6px 10px; font-size:12px; font-weight:800; }
+.balance{ background:#26262c; border-radius:999px; padding:6px 9px; font-size:11.5px; font-weight:800; }
+.gear-btn{ position:relative; background:#26262c;
+  box-shadow:inset 0 0 0 1px rgba(145,70,255,.5), 0 0 14px -6px #9146FF; }
+.gear-btn::after{ content:''; position:absolute; inset:-5px; border-radius:50%; }  /* 46px tap target */
+.gear-btn:active{ transform:scale(.92); }
+.gear-btn:focus-visible{ outline:2px solid #9146FF; outline-offset:2px; }
+.channel .meta{ white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 
 .ticker{ background:#18181b; border-bottom:1px solid rgba(255,255,255,.06); }
 
@@ -863,6 +869,7 @@ main{
     </div>
     <button class="icon-btn" id="muteBtn" aria-label="Звук">🔊</button>
     <button class="icon-btn" aria-label="Поделиться">⤴</button>
+    <button class="icon-btn gear-btn" id="gearBtn" type="button" aria-label="Админ-панель" title="Админ-панель">⚙︎</button>
     <div class="balance"><span class="coin"></span><span id="bitsCount">0</span></div>
   </header>
 
@@ -2707,6 +2714,16 @@ if (admEl.root){
     applyStage(1, true); renderChat(); admRefresh();
     toast('Сохранение сброшено');
   });
+
+  // header gear button — main entry point on iPhone
+  const gear = document.getElementById('gearBtn');
+  if (gear){
+    gear.addEventListener('click', (e) => {
+      e.preventDefault();
+      admOpen();
+      vibrate([8, 22, 8]);
+    });
+  }
 
   // hidden gesture: 5 taps on the header avatar within 2.5s
   const avatar = document.querySelector('.topbar .avatar');
