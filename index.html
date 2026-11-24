@@ -1818,7 +1818,6 @@ function emoSmile(on, ms){
   if (!shy || !EMO.tag) return;
   EMO.shy = !!on;
   shy.classList.toggle('on', !!on);
-  if (el.artChest) el.artChest.classList.toggle('hidden', !!on);
   clearTimeout(EMO.shyTimer);
   if (on && ms) EMO.shyTimer = setTimeout(() => { EMO.shy = false; shy.classList.remove('on'); }, ms);
 }
