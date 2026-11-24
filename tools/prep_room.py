@@ -75,7 +75,7 @@ def prep_desk(factor=2.0, out_w=2600):
     return art
 
 
-def prep_plate(factor=2.0, crop_bottom=1360, edge_row=1018, ramp=12, q=90):
+def prep_plate(factor=2.0, crop_bottom=1227, edge_row=1018, ramp=10, q=90):
     """Плата комнаты: кроп низа -> ACNet x2 -> WebP. Передний план режется из того же
     массива, поэтому в игре BG и FG совпадают пиксель в пиксель."""
     src = Image.open(os.path.join(SRC, '_plate_a.png')).convert('RGB')
