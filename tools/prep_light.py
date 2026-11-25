@@ -26,9 +26,10 @@ BUST = {
     'sg4': ((0.429, 0.404, 0.076, 0.074), (0.597, 0.397, 0.072, 0.075)),  # откинулась
 }
 SIDES = ('l', 'r')
-CORE_K = 0.74    # непрозрачное ядро (доля контура груди)
-HULL_K = 0.92    # внешняя граница растушёвки
-HOLE_K = 0.68    # окно в базовом кадре — строго внутри ядра
+CORE_K = 0.52    # непрозрачное ядро (доля контура груди)
+HULL_K = 0.66    # внешняя граница растушёвки — НЕ доходит до контура
+JIGGLE = 0.021   # пик пружины в долях высоты кропа (как в CSS)
+HOLE_PAD = 0.06  # запас окна на растушёвку
 
 
 def shrink(src, dest, size):
@@ -44,21 +45,32 @@ def _ellipse_mask(size, cx, cy, rx, ry, k):
 
 
 def _bust_mask(size, cx, cy, rx, ry):
-    """Ядро + мягкая растушёвка наружу.
+    """Ядро + мягкая растушёвка наружу, целиком ВНУТРИ нарисованного контура.
 
-    Ядро непрозрачное — иначе край пропа полупрозрачный и сквозь него
-    просвечивает окно в базовом кадре. Растушёвка гаснет у контура груди,
-    поэтому нарисованный контур остаётся статичным: проп двигает только
-    «мясо» внутри силуэта, и двойного контура не возникает.
+    Растушёвка обязана погаснуть раньше, чем дойдёт до контура: иначе при
+    движении рядом с неподвижным нарисованным контуром появляется его
+    полупрозрачная копия — тот самый двойной контур (гостинг).
     """
     hull = _ellipse_mask(size, cx, cy, rx, ry, HULL_K)
-    hull = hull.filter(ImageFilter.GaussianBlur(max(2, int(min(rx, ry) * 0.085))))
+    hull = hull.filter(ImageFilter.GaussianBlur(max(2, int(min(rx, ry) * 0.075))))
     core = _ellipse_mask(size, cx, cy, rx, ry, CORE_K)
     return Image.fromarray(np.maximum(np.array(hull), np.array(core)))
 
 
-def _hole_mask(size, cx, cy, rx, ry):
-    m = _ellipse_mask(size, cx, cy, rx, ry, HOLE_K)
+def _hole_k(rx, ry, box_h):
+    """Радиус окна так, чтобы проп на всём ходе пружины оставался над ним.
+
+    Ядро уезжает вниз на JIGGLE * высоту кропа. Чтобы сверху не открылось
+    прозрачное «окно» (сквозь него видно фон), окно должно быть меньше
+    ядра ровно на этот ход плюс запас на растушёвку.
+    """
+    dy = JIGGLE * box_h
+    k = CORE_K - dy / max(1e-6, min(rx, ry)) - HOLE_PAD
+    return max(0.26, min(CORE_K - 0.05, k))
+
+
+def _hole_mask(size, cx, cy, rx, ry, k):
+    m = _ellipse_mask(size, cx, cy, rx, ry, k)
     return m.filter(ImageFilter.GaussianBlur(max(2, int(min(rx, ry) * 0.05))))
 
 
@@ -66,8 +78,10 @@ def _punch(path, tag, quality=90):
     im = Image.open(path).convert('RGBA')
     W, H = im.size
     hole = Image.new('L', (W, H), 0)
+    box_h = (CHEST_BOX[3] - CHEST_BOX[1]) * H
     for (cx, cy, rx, ry) in BUST[tag]:
-        h = _hole_mask((W, H), cx * W, cy * H, rx * W, ry * H)
+        k = _hole_k(rx * W, ry * H, box_h)
+        h = _hole_mask((W, H), cx * W, cy * H, rx * W, ry * H, k)
         hole = Image.fromarray(np.maximum(np.array(hole), np.array(h)))
     arr = np.array(im)
     arr[..., 3] = (arr[..., 3].astype(np.float32) * (1 - np.array(hole).astype(np.float32) / 255)).astype('uint8')
