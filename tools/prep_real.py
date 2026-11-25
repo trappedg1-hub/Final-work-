@@ -57,13 +57,18 @@ def plate_colour(im, inset=8, size=36):
     return tuple(int(v) for v in np.median(np.concatenate(px, 0), 0))
 
 
-def to_alpha_art(im):
-    """Ключ -> альфа -> заполнение краёв -> ACNet x2 -> 3:4 холст."""
+def to_alpha_art(im, factor=2.0):
+    """Ключ -> альфа -> заполнение краёв -> ACNet xN -> 3:4 холст.
+
+    factor=4 даёт ~5K по длинной стороне: после даунсэмпла в мастер мелкие
+    детали (шнуровка, вышивка, ресницы) остаются резкими, а не размытыми,
+    как при x2 с апскейлом холста вверх.
+    """
     keyed, _ref = PA.key_chroma(im)
     arr = np.array(keyed)
     rgb, alpha = arr[..., :3], arr[..., 3]
     filled = PA.fill_edges(rgb, alpha)
-    big = PA.acnet_upscale(Image.fromarray(filled, 'RGB'), 2.0)
+    big = PA.acnet_upscale(Image.fromarray(filled, 'RGB'), factor)
     a_up = Image.fromarray(alpha, 'L').resize(big.size, Image.LANCZOS)
     art = big.convert('RGBA')
     art.putalpha(a_up)

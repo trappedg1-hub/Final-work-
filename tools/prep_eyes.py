@@ -23,13 +23,17 @@ from PIL import Image, ImageChops, ImageDraw, ImageFilter
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 RAW = os.path.join(ROOT, 'images', 'raw_real')
 OUT = os.path.join(ROOT, 'assets', 'real')
-MASTER = (1170, 1560)   # ровно разрешение арта, которое отдаётся телефону (_sm)
+MASTER = (2340, 3120)   # мастер-разрешение арта: слой мимики не мылится на retina
+# Все радиусы масок в этом файле отлажены на кадре 1170 px. При сборке в
+# мастер-разрешении их надо умножать, иначе ядро веки относительно глаза
+# сжимается вдвое и старое открытое веко просвечивает из-под нового.
+S = MASTER[0] / 1170.0
 
 SRC = {
-    '1': os.path.join(ROOT, 'assets', 'real', 'art_real_day1_{tag}_sm.webp'),
-    '2': os.path.join(ROOT, 'assets', 'real', 'art_real_day2_{tag}_sm.webp'),
-    '3': os.path.join(ROOT, 'assets', 'real', 'art_real_day3_{tag}_sm.webp'),
-    '4': os.path.join(ROOT, 'assets', 'real', 'art_real_day4_{tag}_sm.webp'),
+    '1': os.path.join(ROOT, 'assets', 'real', 'art_real_day1_{tag}.webp'),
+    '2': os.path.join(ROOT, 'assets', 'real', 'art_real_day2_{tag}.webp'),
+    '3': os.path.join(ROOT, 'assets', 'real', 'art_real_day3_{tag}.webp'),
+    '4': os.path.join(ROOT, 'assets', 'real', 'art_real_day4_{tag}.webp'),
 }
 FACECROP = {'1': '_d1f2_{mood}_{tag}.png', '2': '_d2f2_{mood}_{tag}.png',
             '3': '_d3f2_{mood}_{tag}.png', '4': '_d4f2_{mood}_{tag}.png'}
@@ -49,9 +53,9 @@ BOX = {
     '3sg3': (0.360, 0.040, 0.660, 0.270),
     '3sg4': (0.440, 0.020, 0.760, 0.260),
     '4sg1': (0.360, 0.100, 0.720, 0.300),
-    '4sg2': (0.360, 0.100, 0.720, 0.300),
+    '4sg2': (0.170, 0.135, 0.450, 0.325),
     '4sg3': (0.380, 0.100, 0.660, 0.290),
-    '4sg4': (0.600, 0.170, 0.920, 0.400),
+    '4sg4': (0.300, 0.070, 0.620, 0.300),
 }
 # глаза в долях КРОПА: (x0,y0,x1,y1) — левый по картинке, правый по картинке
 EYES = {
@@ -68,9 +72,9 @@ EYES = {
     '3sg3': ((0.350, 0.530, 0.485, 0.640), (0.600, 0.510, 0.725, 0.620)),
     '3sg4': ((0.235, 0.462, 0.375, 0.565), (0.415, 0.535, 0.555, 0.638)),
     '4sg1': ((0.200, 0.395, 0.315, 0.485), (0.400, 0.355, 0.515, 0.445)),
-    '4sg2': ((0.215, 0.385, 0.330, 0.475), (0.405, 0.350, 0.520, 0.440)),
+    '4sg2': ((0.275, 0.525, 0.420, 0.625), (0.495, 0.505, 0.645, 0.605)),
     '4sg3': ((0.240, 0.455, 0.360, 0.545), (0.465, 0.400, 0.585, 0.490)),
-    '4sg4': ((0.090, 0.270, 0.200, 0.350), (0.235, 0.315, 0.340, 0.395)),
+    '4sg4': ((0.430, 0.455, 0.560, 0.540), (0.640, 0.415, 0.770, 0.500)),
 }
 MOODS = ('blink', 'shy')
 GEO = {}                 # key -> [left, top, width, height] в долях кадра
@@ -118,8 +122,8 @@ def match_low(gen, ref, radius=14.0, limit=9.0):
     """
     g = np.asarray(gen.convert('RGB')).astype(np.float32)
     r = np.asarray(ref.convert('RGB')).astype(np.float32)
-    gb = cv2.GaussianBlur(g, (0, 0), radius)
-    rb = cv2.GaussianBlur(r, (0, 0), radius)
+    gb = cv2.GaussianBlur(g, (0, 0), radius * S)
+    rb = cv2.GaussianBlur(r, (0, 0), radius * S)
     corr = np.clip(rb - gb, -limit, limit)
     out = np.clip(g + corr, 0, 255).astype('uint8')
     return Image.fromarray(out)
@@ -138,11 +142,11 @@ def match_sharp(gen, ref, region):
     if vg <= 0 or vr <= 0:
         return gen
     out = gen
-    sigma = 0.6
-    while vg > vr * 1.06 and sigma < 3.2:
+    sigma = 0.6 * S
+    while vg > vr * 1.06 and sigma < 3.2 * S:
         out = gen.filter(ImageFilter.GaussianBlur(sigma))
         vg = cv2.Laplacian(np.asarray(out.convert('L')).astype(np.float32), cv2.CV_32F).var()
-        sigma += 0.4
+        sigma += 0.4 * S
     return out
 
 
@@ -170,11 +174,11 @@ def _shift_band(ref, gen, box):
     ложилось мимо глаза — два глаза друг на друге.
     """
     def edges(x):
-        g = cv2.GaussianBlur(x, (0, 0), 1.2)
+        g = cv2.GaussianBlur(x, (0, 0), 1.2 * S)
         gx = cv2.Sobel(g, cv2.CV_32F, 1, 0, ksize=3)
         gy = cv2.Sobel(g, cv2.CV_32F, 0, 1, ksize=3)
         e = np.abs(gx) + np.abs(gy)
-        return cv2.GaussianBlur(e, (0, 0), 1.0)
+        return cv2.GaussianBlur(e, (0, 0), 1.0 * S)
 
     a = edges(np.asarray(ref.convert('L'), dtype=np.float32))
     g0 = edges(np.asarray(gen.convert('L'), dtype=np.float32))
@@ -226,7 +230,7 @@ def _shift_nose(ref, gen, box):
 def _ell(size, cx, cy, rx, ry, blur):
     m = Image.new('L', size, 0)
     ImageDraw.Draw(m).ellipse((cx - rx, cy - ry, cx + rx, cy + ry), fill=255)
-    return m.filter(ImageFilter.GaussianBlur(max(2, int(blur))))
+    return m.filter(ImageFilter.GaussianBlur(max(2, int(blur * S))))
 
 
 def build(day, tag, mood, debug=False):
@@ -273,7 +277,7 @@ def build(day, tag, mood, debug=False):
                       e[2] + ew_ * 0.22, e[3] + eh_ * 0.45], fill=255)
     # кромку ядра растушёвываем сильнее: при 2 px на коже была видна прямая
     # граница прямоугольника («стеклянная плашка» над глазом)
-    hard = hard.filter(ImageFilter.GaussianBlur(5))
+    hard = hard.filter(ImageFilter.GaussianBlur(5 * S))
     # Растушёвка — ВОКРУГ КАЖДОГО ГЛАЗА, а не общим овалом на всю полосу:
     # у наклонённой головы в полосу попадает бровь, и её смещённая копия из
     # генерата ложилась второй дугой над веком.
@@ -302,8 +306,9 @@ def build(day, tag, mood, debug=False):
         cv2.rectangle(box_only, (int(e[0] - ew_ * 0.30), int(e[1] - eh_ * 0.10)),
                       (int(e[2] + ew_ * 0.30), int(e[3] + eh_ * 0.50)), 255, -1)
     eye_px = cv2.bitwise_and(eye_px, box_only)
-    eye_px = cv2.dilate(eye_px, np.ones((5, 5), 'uint8'))
-    eye_px = cv2.GaussianBlur(eye_px, (0, 0), 1.6)
+    kn = max(3, int(round(5 * S)))
+    eye_px = cv2.dilate(eye_px, np.ones((kn, kn), 'uint8'))
+    eye_px = cv2.GaussianBlur(eye_px, (0, 0), 1.6 * S)
     alpha = Image.fromarray(np.maximum(np.array(alpha), eye_px), 'L')
 
     # Выше верхней кромки бокса глаза альфу обнуляем: там бровь. Иначе её
@@ -394,7 +399,7 @@ def build(day, tag, mood, debug=False):
                 ex, ey = (e[2] - e[0]) * 0.16, (e[3] - e[1]) * 0.16
                 dm.rectangle([box[0] + e[0] - ex, box[1] + e[1] - ey,
                               box[0] + e[2] + ex, box[1] + e[3] + ey], fill=255)
-            m_eye = m_eye.filter(ImageFilter.GaussianBlur(3))
+            m_eye = m_eye.filter(ImageFilter.GaussianBlur(3 * S))
             canvas_rgb = Image.composite(canvas_b, canvas_rgb, m_eye)
 
     # Кадр целиком отдавать вёрстке нельзя: элемент размером с кадр при
@@ -443,7 +448,8 @@ def build(day, tag, mood, debug=False):
     # поэтому структура не страдает — исчезают именно «пятнышки».
     arr2_ = np.asarray(full).astype(np.float32)
     rgb_im = full.convert('RGB')
-    med_ = np.asarray(rgb_im.filter(ImageFilter.MedianFilter(5)), dtype=np.float32)
+    mk = max(3, int(round(5 * S)) | 1)
+    med_ = np.asarray(rgb_im.filter(ImageFilter.MedianFilter(mk)), dtype=np.float32)
     lum_ = arr2_[..., :3].mean(axis=2)
     lmed_ = med_.mean(axis=2)
     artl_ = art_c.mean(axis=2)
