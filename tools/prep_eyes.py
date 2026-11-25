@@ -18,7 +18,7 @@ import sys
 
 import cv2
 import numpy as np
-from PIL import Image, ImageDraw, ImageFilter
+from PIL import Image, ImageChops, ImageDraw, ImageFilter
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 RAW = os.path.join(ROOT, 'images', 'raw_real')
@@ -143,26 +143,35 @@ def band_box(key, tw, th, pad=0.10):
 
 
 def _shift_band(ref, gen, box):
-    """Сдвиг и масштаб по полосе глаз (шаблон = вся глазница целиком)."""
-    a = np.asarray(ref.convert('L'), dtype=np.float32) / 255.0
-    g0 = np.asarray(gen.convert('L'), dtype=np.float32) / 255.0
+    """Сдвиг и масштаб по полосе глаз (шаблон = вся глазница целиком).
+
+    Ищем по КОНТУРАМ и в широком диапазоне: генератор иногда отдаёт голову
+    заметно мельче и сдвинутой (2-й день, 2-я стадия — масштаб ~0.90). Старый
+    узкий диапазон 0.96..1.04 давал «совпадение» с плохим выравниванием, и веко
+    ложилось мимо глаза — два глаза друг на друге.
+    """
+    def edges(x):
+        g = cv2.GaussianBlur(x, (0, 0), 1.2)
+        gx = cv2.Sobel(g, cv2.CV_32F, 1, 0, ksize=3)
+        gy = cv2.Sobel(g, cv2.CV_32F, 0, 1, ksize=3)
+        e = np.abs(gx) + np.abs(gy)
+        return cv2.GaussianBlur(e, (0, 0), 1.0)
+
+    a = edges(np.asarray(ref.convert('L'), dtype=np.float32))
+    g0 = edges(np.asarray(gen.convert('L'), dtype=np.float32))
     x0, y0, x1, y1 = [int(v) for v in box]
     tpl = a[y0:y1, x0:x1]
-    tw, th = tpl.shape[1], tpl.shape[0]
-    mx_shift = int(tw * 0.22)
-    my_shift = int(th * 0.55)
-    best = (1.0, 0, 0, 0.0)
-    for f in (0.96, 0.97, 0.98, 0.99, 1.0, 1.01, 1.02, 1.03, 1.04):
-        g = cv2.resize(g0, None, fx=f, fy=f, interpolation=cv2.INTER_LANCZOS4)
-        rx0, ry0 = max(0, x0 - mx_shift), max(0, y0 - my_shift)
-        rx1, ry1 = min(g.shape[1], x1 + mx_shift), min(g.shape[0], y1 + my_shift)
-        roi = g[ry0:ry1, rx0:rx1]
-        if roi.shape[0] < th + 4 or roi.shape[1] < tw + 4:
+    if tpl.shape[0] < 8 or tpl.shape[1] < 8:
+        return (1.0, 0, 0, 0.0)
+    best = (1.0, 0, 0, -1.0)
+    for f in [0.82 + 0.02 * i for i in range(19)]:
+        g = cv2.resize(g0, None, fx=f, fy=f, interpolation=cv2.INTER_AREA if f < 1 else cv2.INTER_LANCZOS4)
+        if g.shape[0] < tpl.shape[0] or g.shape[1] < tpl.shape[1]:
             continue
-        r = cv2.matchTemplate(roi, tpl, cv2.TM_CCOEFF_NORMED)
+        r = cv2.matchTemplate(g, tpl, cv2.TM_CCOEFF_NORMED)
         _, mx, _, loc = cv2.minMaxLoc(r)
         if mx > best[3]:
-            best = (f, x0 - (loc[0] + rx0), y0 - (loc[1] + ry0), mx)
+            best = (f, x0 - loc[0], y0 - loc[1], mx)
     return best
 
 
@@ -227,7 +236,7 @@ def build(day, tag, mood, debug=False):
     log = []
     B = band_box(key, tw, th)   # уже в пикселях кропа
     f, dx, dy, score = _shift_band(ref, gen, B)
-    if score < 0.60:
+    if score < 0.45:
         f, dx, dy = 1.0, 0, 0
     g2 = gen.resize((round(tw * f), round(th * f)), Image.LANCZOS) if f != 1.0 else gen
     log.append(f'{f:.2f}[{dx},{dy}]{score:.2f}')
@@ -238,22 +247,74 @@ def build(day, tag, mood, debug=False):
     dh = ImageDraw.Draw(hard)
     for b in EYES[key]:
         e = (b[0] * tw, b[1] * th, b[2] * tw, b[3] * th)
-        cx, cy = (e[0] + e[2]) / 2, (e[1] + e[3]) / 2
-        rx, ry = (e[2] - e[0]) / 2 * 1.12, (e[3] - e[1]) / 2 * 1.12
-        dh.ellipse((cx - rx, cy - ry, cx + rx, cy + ry), fill=255)
-    hard = hard.filter(ImageFilter.GaussianBlur(max(2, int(min(B[2] - B[0], B[3] - B[1]) * 0.06))))
+        ex, ey = (e[2] - e[0]) * 0.06, (e[3] - e[1]) * 0.06
+        dh.rectangle([e[0] - ex, e[1] - ey, e[2] + ex, e[3] + ey], fill=255)
+    # кромку ядра растушёвываем сильнее: при 2 px на коже была видна прямая
+    # граница прямоугольника («стеклянная плашка» над глазом)
+    hard = hard.filter(ImageFilter.GaussianBlur(5))
+    # Растушёвка — ВОКРУГ КАЖДОГО ГЛАЗА, а не общим овалом на всю полосу:
+    # у наклонённой головы в полосу попадает бровь, и её смещённая копия из
+    # генерата ложилась второй дугой над веком.
     soft = Image.new('L', (tw, th), 0)
-    ImageDraw.Draw(soft).ellipse(B, fill=255)
-    soft = soft.filter(ImageFilter.GaussianBlur(max(3, int(min(B[2] - B[0], B[3] - B[1]) * BAND_FEATHER))))
-    alpha = Image.fromarray(np.maximum(np.array(hard), (np.array(soft) * 0.85).astype('uint8')), 'L')
+    ds = ImageDraw.Draw(soft)
+    for b in EYES[key]:
+        e = (b[0] * tw, b[1] * th, b[2] * tw, b[3] * th)
+        cx, cy = (e[0] + e[2]) / 2, (e[1] + e[3]) / 2
+        rx, ry = (e[2] - e[0]) / 2 * 1.70, (e[3] - e[1]) / 2 * 1.55
+        ds.ellipse((cx - rx, cy - ry, cx + rx, cy + ry), fill=255)
+    soft = soft.filter(ImageFilter.GaussianBlur(max(3, int(min(B[2] - B[0], B[3] - B[1]) * 0.09))))
+    alpha = Image.fromarray(np.maximum(np.array(hard), (np.array(soft) * 0.50).astype('uint8')), 'L')
+
+    # Гарантия «старого глаза не видно»: там, где в арте лежит тёмный зрачок,
+    # ресницы или зелёная радужка, альфа — полная. Иначе у наклонённого глаза
+    # (2-й день, 2-я стадия) старый зрачок просвечивал рядом с новым веком и
+    # получалось два глаза друг на друге.
+    ra_ = np.asarray(ref.convert('RGB')).astype(np.float32)
+    lum_ = ra_.mean(axis=2)
+    grn_ = (ra_[..., 1] > ra_[..., 0] + 4) & (ra_[..., 1] > ra_[..., 2] + 4)
+    eye_px = ((lum_ < 118) | grn_).astype('uint8') * 255
+    box_only = np.zeros((th, tw), dtype='uint8')
+    for b in EYES[key]:
+        e = (b[0] * tw, b[1] * th, b[2] * tw, b[3] * th)
+        ex, ey = (e[2] - e[0]) * 0.20, (e[3] - e[1]) * 0.20
+        cv2.rectangle(box_only, (int(e[0] - ex), int(e[1] - ey)), (int(e[2] + ex), int(e[3] + ey)), 255, -1)
+    eye_px = cv2.bitwise_and(eye_px, box_only)
+    eye_px = cv2.dilate(eye_px, np.ones((5, 5), 'uint8'))
+    eye_px = cv2.GaussianBlur(eye_px, (0, 0), 1.6)
+    alpha = Image.fromarray(np.maximum(np.array(alpha), eye_px), 'L')
+
+    # Выше верхней кромки бокса глаза альфу обнуляем: там бровь. Иначе её
+    # смещённая копия из генерата ложилась второй дугой над веком.
+    al_np = np.asarray(alpha).astype(np.float32).copy()
+    for b in EYES[key]:
+        e = (b[0] * tw, b[1] * th, b[2] * tw, b[3] * th)
+        top = e[1] - 2.0
+        xs0, xs1 = int(e[0] - (e[2] - e[0]) * 0.30), int(e[2] + (e[2] - e[0]) * 0.30)
+        xs0, xs1 = max(0, xs0), min(tw, xs1)
+        yy = np.arange(th, dtype=np.float32)[:, None]
+        ramp = np.clip((yy - (top - 6.0)) / 6.0, 0.0, 1.0)
+        xx = np.arange(tw, dtype=np.float32)[None, :]
+        # по X — тоже плавно, иначе на стыке полосы появляется вертикальная
+        # линия («стеклянная плашка» над глазом)
+        xw = np.clip(np.minimum((xx - xs0) / 9.0, (xs1 - xx) / 9.0), 0.0, 1.0)
+        al_np *= (1.0 - (1.0 - ramp) * xw)
+    alpha = Image.fromarray(al_np.astype('uint8'), 'L')
 
     if mood == 'shy':
-        # щёки: кожа ровная — сюда можно класть содержимое генерата широко и мягко
+        # Щёки: «вниз по лицу», а не «вниз по кадру». У наклонённой головы
+        # (2-й день, 2-я стадия) смещение по Y уводило щёку на соседний глаз, и
+        # поверх него ложилось второе веко — «эмоции друг на друге».
+        e0 = [b * v for b, v in zip(EYES[key][0], (tw, th, tw, th))]
+        e1 = [b * v for b, v in zip(EYES[key][-1], (tw, th, tw, th))]
+        ux, uy = (e1[0] + e1[2]) / 2 - (e0[0] + e0[2]) / 2, (e1[1] + e1[3]) / 2 - (e0[1] + e0[3]) / 2
+        n = max(1e-6, (ux * ux + uy * uy) ** 0.5)
+        ux, uy = ux / n, uy / n
+        down = (-uy, ux) if ux >= 0 else (uy, -ux)      # перпендикуляр к линии глаз, вниз
         for b in EYES[key]:
             e = (b[0] * tw, b[1] * th, b[2] * tw, b[3] * th)
             ew, eh = (e[2] - e[0]), (e[3] - e[1])
-            cx = (e[0] + e[2]) / 2
-            cy = e[3] + eh * 0.55
+            cx = (e[0] + e[2]) / 2 + down[0] * eh * 0.95
+            cy = (e[1] + e[3]) / 2 + down[1] * eh * 0.95
             rx, ry = ew * 0.52 * CHEEK_GROW, eh * 0.62 * CHEEK_GROW
             m = _ell((tw, th), cx, cy, rx, ry, min(rx, ry) * CHEEK_FEATHER)
             alpha = Image.fromarray(np.maximum(np.array(alpha), np.array(m)), 'L')
@@ -263,24 +324,81 @@ def build(day, tag, mood, debug=False):
     # полупрозрачный край маски ложился на лицо серой тенью («квадрат»).
     # КАДР С ГЕНЕРАТОМ: в патч должен идти ИМЕННО он, а не базовый арт.
     # (Раньше здесь оставался неиспользованный буфер, и слой моргал «пустотой».)
+    # Гасим НИЗКОЧАСТОТНУЮ ошибку генерата: он перерисовывает лицо чуть иначе
+    # по свету и гладкости, и в полупрозрачной растушёвке это читалось как
+    # «два лица друг на друге» (особенно на наклонённой голове, 2-й день,
+    # 2-я стадия). Оставляем от генерата только локальную деталь — веки.
+    gg = g2 if g2.size == ref.size else g2.resize(ref.size, Image.LANCZOS)
+    ra = np.asarray(ref.convert('RGB'), dtype=np.float32)
+    ga = np.asarray(gg.convert('RGB'), dtype=np.float32)
+    sig = max(2.5, min(ref.size) * 0.045)
+    low = cv2.GaussianBlur(ga - ra, (0, 0), sig)
+    g2c = Image.fromarray(np.clip(ga - low, 0, 255).astype('uint8'), 'RGB')
     canvas_rgb = flat.copy()
-    canvas_rgb.paste(g2, (box[0] + dx, box[1] + dy))
+    canvas_rgb.paste(g2c, (box[0] + dx, box[1] + dy))
+
+    canvas_rgb = flat.copy()
+    canvas_rgb.paste(g2c, (box[0] + dx, box[1] + dy))
+
+    if mood == 'shy':
+        # ГЛАЗА ДЛЯ «shy» БЕРЁМ ИЗ «blink». У наклонённых поз (2-й день, 2-я
+        # стадия) генерат «shy» рисует затенённый глаз выше и мельче, чем в
+        # арте, и поверх старого глаза ложится второе веко — «эмоции друг на
+        # друге». Моргание выровнено идеально, поэтому веки берём оттуда, а от
+        # «shy» остаётся румянец.
+        srcb = os.path.join(RAW, FACECROP[day].format(mood='blink', tag=tag))
+        if os.path.exists(srcb):
+            genb = Image.open(srcb).convert('RGB').resize((tw, th), Image.LANCZOS)
+            genb = match_sharp(match_low(genb, ref), ref, _nose_box(key, tw, th))
+            fb, dxb, dyb, sb = _shift_band(ref, genb, B)
+            if sb < 0.45:
+                fb, dxb, dyb = 1.0, 0, 0
+            gb2 = genb.resize((round(tw * fb), round(th * fb)), Image.LANCZOS) if fb != 1.0 else genb
+            ggb = gb2 if gb2.size == ref.size else gb2.resize(ref.size, Image.LANCZOS)
+            rab = np.asarray(ref.convert('RGB'), dtype=np.float32)
+            gbb = np.asarray(ggb.convert('RGB'), dtype=np.float32)
+            lowb = cv2.GaussianBlur(gbb - rab, (0, 0), sig)
+            gbc = Image.fromarray(np.clip(gbb - lowb, 0, 255).astype('uint8'), 'RGB')
+            canvas_b = flat.copy()
+            canvas_b.paste(gbc, (box[0] + dxb, box[1] + dyb))
+            m_eye = Image.new('L', MASTER, 0)
+            dm = ImageDraw.Draw(m_eye)
+            for b in EYES[key]:
+                e = (b[0] * tw, b[1] * th, b[2] * tw, b[3] * th)
+                ex, ey = (e[2] - e[0]) * 0.16, (e[3] - e[1]) * 0.16
+                dm.rectangle([box[0] + e[0] - ex, box[1] + e[1] - ey,
+                              box[0] + e[2] + ex, box[1] + e[3] + ey], fill=255)
+            m_eye = m_eye.filter(ImageFilter.GaussianBlur(3))
+            canvas_rgb = Image.composite(canvas_b, canvas_rgb, m_eye)
 
     # Кадр целиком отдавать вёрстке нельзя: элемент размером с кадр при
     # каждом моргании подсовывает телефону картинку на весь экран, а в
     # прозрачной зоне у неё чёрный цвет — при уменьшении это и давало серый
     # прямоугольник и тёмное лицо. Отдаём только область глаз: она маленькая,
     # в прозрачных пикселях лежит ЦВЕТ АРТА, а не чёрный.
-    gx0 = (box[0] + B[0] - (B[2] - B[0]) * 0.22) / W
-    gy0 = (box[1] + B[1] - (B[3] - B[1]) * 0.30) / H
-    gx1 = (box[0] + B[2] + (B[2] - B[0]) * 0.22) / W
-    gy1 = (box[1] + B[3] + (B[3] - B[1]) * 0.30) / H
+    # Запас по краям минимальный: сгенерированный кадр — это перерисовка всего
+    # лица, и чем дальше от глаз, тем сильнее она «уезжает» от арта. С большим
+    # запасом на наклонённом лице (2-й день, 2-я поза) видно ДВА лица друг на
+    # друге — нос и контур щеки в генерате стоят иначе.
+    gx0 = (box[0] + B[0] - (B[2] - B[0]) * 0.05) / W
+    gy0 = (box[1] + B[1] - (B[3] - B[1]) * 0.10) / H
+    gx1 = (box[0] + B[2] + (B[2] - B[0]) * 0.05) / W
+    gy1 = (box[1] + B[3] + (B[3] - B[1]) * 0.10) / H
     gx0, gy0 = max(0.0, gx0), max(0.0, gy0)
     gx1, gy1 = min(1.0, gx1), min(1.0, gy1)
     cbox = (round(W * gx0), round(H * gy0), round(W * gx1), round(H * gy1))
     full = canvas_rgb.crop(cbox).convert('RGBA')
     full_alpha = Image.new('L', full.size, 0)
     full_alpha.paste(alpha, (box[0] - cbox[0], box[1] - cbox[1]))
+    # Альфа обязана дойти до нуля у самой кромки: иначе на границе кропа
+    # остаётся прямая линия и патч читается как прямоугольник поверх лица.
+    win = Image.new('L', full.size, 0)
+    mx, my = max(2, int(full.width * 0.10)), max(2, int(full.height * 0.10))
+    ImageDraw.Draw(win).rounded_rectangle(
+        [mx, my, full.width - 1 - mx, full.height - 1 - my],
+        radius=int(min(full.size) * 0.26), fill=255)
+    win = win.filter(ImageFilter.GaussianBlur(max(2, int(min(full.size) * 0.07))))
+    full_alpha = ImageChops.multiply(full_alpha, win)
     full.putalpha(full_alpha)
     GEO[key] = [round(gx0, 4), round(gy0, 4), round(gx1 - gx0, 4), round(gy1 - gy0, 4)]
     out = os.path.join(OUT, f'art_real_face_day{day}_{tag}_{mood}.webp')
