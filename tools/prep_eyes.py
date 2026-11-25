@@ -66,14 +66,14 @@ EYES = {
     '2sg1': ((0.295, 0.455, 0.425, 0.565), (0.425, 0.385, 0.545, 0.495)),
     '2sg2': ((0.195, 0.745, 0.315, 0.835), (0.335, 0.595, 0.475, 0.705)),
     '2sg3': ((0.315, 0.475, 0.445, 0.565), (0.525, 0.415, 0.635, 0.505)),
-    '2sg4': ((0.175, 0.555, 0.295, 0.645), (0.325, 0.455, 0.465, 0.545)),
+    '2sg4': ((0.121, 0.500, 0.271, 0.596), (0.268, 0.422, 0.418, 0.518)),
     '3sg1': ((0.290, 0.430, 0.440, 0.560), (0.470, 0.570, 0.620, 0.700)),
     '3sg2': ((0.360, 0.600, 0.500, 0.720), (0.545, 0.490, 0.680, 0.610)),
     '3sg3': ((0.350, 0.530, 0.485, 0.640), (0.600, 0.510, 0.725, 0.620)),
-    '3sg4': ((0.235, 0.462, 0.375, 0.565), (0.415, 0.535, 0.555, 0.638)),
+    '3sg4': ((0.221, 0.464, 0.371, 0.560), (0.396, 0.578, 0.546, 0.674)),
     '4sg1': ((0.200, 0.395, 0.315, 0.485), (0.400, 0.355, 0.515, 0.445)),
     '4sg2': ((0.275, 0.525, 0.420, 0.625), (0.495, 0.505, 0.645, 0.605)),
-    '4sg3': ((0.240, 0.455, 0.360, 0.545), (0.465, 0.400, 0.585, 0.490)),
+    '4sg3': ((0.228, 0.443, 0.372, 0.560), (0.452, 0.388, 0.598, 0.505)),
     '4sg4': ((0.430, 0.455, 0.560, 0.540), (0.640, 0.415, 0.770, 0.500)),
 }
 MOODS = ('blink', 'shy')
@@ -227,6 +227,36 @@ def _shift_nose(ref, gen, box):
     return best
 
 
+def _align_nose(ref, gen, nb):
+    """Сдвиг и масштаб генерата по носу — самой стабильной зоне лица.
+
+    Генератор возвращает кроп СВОЕГО аспекта (обычно ~1.10 против 1.19 у
+    кадра), поэтому растягивать его в размер кадра нельзя: голова уезжает
+    вниз и веко ложится мимо глаза. Здесь генерат масштабируется только по
+    ширине, а положение подбирается по носу (мимика его не двигает).
+    """
+    a = np.asarray(ref.convert('L'), dtype=np.float32)
+    g0 = np.asarray(gen.convert('L'), dtype=np.float32)
+    x0, y0, x1, y1 = [int(v) for v in nb]
+    tpl = a[y0:y1, x0:x1]
+    if tpl.shape[0] < 6 or tpl.shape[1] < 6:
+        return (1.0, 0, 0, 0.0)
+    best = (1.0, 0, 0, -1.0)
+    for f in (1.0, 0.98, 1.02, 1.04, 0.96, 1.06, 0.94, 1.08):
+        if f == 1.0:
+            g = g0
+        else:
+            g = cv2.resize(g0, None, fx=f, fy=f,
+                           interpolation=cv2.INTER_AREA if f < 1 else cv2.INTER_LANCZOS4)
+        if g.shape[0] < tpl.shape[0] or g.shape[1] < tpl.shape[1]:
+            continue
+        r = cv2.matchTemplate(g, tpl, cv2.TM_CCOEFF_NORMED)
+        _, mx, _, loc = cv2.minMaxLoc(r)
+        if mx > best[3]:
+            best = (f, x0 - loc[0], y0 - loc[1], mx)
+    return best
+
+
 def _ell(size, cx, cy, rx, ry, blur):
     m = Image.new('L', size, 0)
     ImageDraw.Draw(m).ellipse((cx - rx, cy - ry, cx + rx, cy + ry), fill=255)
@@ -249,20 +279,30 @@ def build(day, tag, mood, debug=False):
     if not os.path.exists(src):
         print(f'  {key} {mood}: нет {os.path.basename(src)}')
         return None
-    gen = Image.open(src).convert('RGB').resize((tw, th), Image.LANCZOS)
+    nb = _nose_box(key, tw, th)
+    graw = Image.open(src).convert('RGB')
+    kw = tw / graw.width
+    gen0 = graw.resize((tw, max(1, round(graw.height * kw))), Image.LANCZOS)
+    f_n, adx, ady, n_score = _align_nose(ref, gen0, nb)
+    if n_score < 0.30:
+        f_n, adx, ady = 1.0, 0, 0
+    if f_n != 1.0:
+        gen0 = gen0.resize((round(gen0.width * f_n), round(gen0.height * f_n)), Image.LANCZOS)
+    # холст — сам базовый кроп: если генерат не покрыл край, там остаётся арт,
+    # а не зелёная плашка
+    gcan = ref.copy()
+    gcan.paste(gen0, (adx, ady))
+    gen = gcan
     # генерат мягче базового арта (820 px -> кроп кадра): возвращаем ту же резкость,
     # иначе под маской видна «замыленная» кожа
     gen = match_low(gen, ref)
-    gen = match_sharp(gen, ref, _nose_box(key, tw, th))
+    gen = match_sharp(gen, ref, nb)
 
     canvas = Image.new('RGBA', (tw, th), (0, 0, 0, 0))
     log = []
     B = band_box(key, tw, th)   # уже в пикселях кропа
-    f, dx, dy, score = _shift_band(ref, gen, B)
-    if score < 0.45:
-        f, dx, dy = 1.0, 0, 0
-    g2 = gen.resize((round(tw * f), round(th * f)), Image.LANCZOS) if f != 1.0 else gen
-    log.append(f'{f:.2f}[{dx},{dy}]{score:.2f}')
+    f, dx, dy, score = 1.0, 0, 0, n_score
+    log.append(f'{f_n:.2f}[{adx},{ady}]{score:.2f}')
 
     # Ядро — по каждому глазу почти в полную силу: иначе закрытые веки
     # ложатся поверх открытых с альфой ~0.4 и моргания не видно вообще.
@@ -273,8 +313,8 @@ def build(day, tag, mood, debug=False):
         ew_, eh_ = e[2] - e[0], e[3] - e[1]
         # Низ расширяем: под глазом остаётся тёмная линия нижних ресниц, и в
         # растушёвке она просвечивала чёрными точками на закрытом веке.
-        dh.rectangle([e[0] - ew_ * 0.22, e[1] - eh_ * 0.06,
-                      e[2] + ew_ * 0.22, e[3] + eh_ * 0.45], fill=255)
+        dh.rectangle([e[0] - ew_ * 0.30, e[1] - eh_ * 0.10,
+                      e[2] + ew_ * 0.30, e[3] + eh_ * 0.60], fill=255)
     # кромку ядра растушёвываем сильнее: при 2 px на коже была видна прямая
     # граница прямоугольника («стеклянная плашка» над глазом)
     hard = hard.filter(ImageFilter.GaussianBlur(5 * S))
@@ -289,7 +329,7 @@ def build(day, tag, mood, debug=False):
         rx, ry = (e[2] - e[0]) / 2 * 1.70, (e[3] - e[1]) / 2 * 1.55
         ds.ellipse((cx - rx, cy - ry, cx + rx, cy + ry), fill=255)
     soft = soft.filter(ImageFilter.GaussianBlur(max(3, int(min(B[2] - B[0], B[3] - B[1]) * 0.09))))
-    alpha = Image.fromarray(np.maximum(np.array(hard), (np.array(soft) * 0.50).astype('uint8')), 'L')
+    alpha = Image.fromarray(np.maximum(np.array(hard), (np.array(soft) * 0.62).astype('uint8')), 'L')
 
     # Гарантия «старого глаза не видно»: там, где в арте лежит тёмный зрачок,
     # ресницы или зелёная радужка, альфа — полная. Иначе у наклонённого глаза
@@ -356,7 +396,7 @@ def build(day, tag, mood, debug=False):
     # по свету и гладкости, и в полупрозрачной растушёвке это читалось как
     # «два лица друг на друге» (особенно на наклонённой голове, 2-й день,
     # 2-я стадия). Оставляем от генерата только локальную деталь — веки.
-    gg = g2 if g2.size == ref.size else g2.resize(ref.size, Image.LANCZOS)
+    gg = gen if gen.size == ref.size else gen.resize(ref.size, Image.LANCZOS)
     ra = np.asarray(ref.convert('RGB'), dtype=np.float32)
     ga = np.asarray(gg.convert('RGB'), dtype=np.float32)
     sig = max(2.5, min(ref.size) * 0.045)
@@ -379,12 +419,19 @@ def build(day, tag, mood, debug=False):
         # «shy» остаётся румянец.
         srcb = os.path.join(RAW, FACECROP[day].format(mood='blink', tag=tag))
         if os.path.exists(srcb):
-            genb = Image.open(srcb).convert('RGB').resize((tw, th), Image.LANCZOS)
-            genb = match_sharp(match_low(genb, ref), ref, _nose_box(key, tw, th))
-            fb, dxb, dyb, sb = _shift_band(ref, genb, B)
-            if sb < 0.45:
+            grawb = Image.open(srcb).convert('RGB')
+            kwb = tw / grawb.width
+            genb0 = grawb.resize((tw, max(1, round(grawb.height * kwb))), Image.LANCZOS)
+            fb, dxb, dyb, sb = _align_nose(ref, genb0, nb)
+            if sb < 0.30:
                 fb, dxb, dyb = 1.0, 0, 0
-            gb2 = genb.resize((round(tw * fb), round(th * fb)), Image.LANCZOS) if fb != 1.0 else genb
+            if fb != 1.0:
+                genb0 = genb0.resize((round(genb0.width * fb), round(genb0.height * fb)), Image.LANCZOS)
+            genb = ref.copy()
+            genb.paste(genb0, (dxb, dyb))
+            genb = match_sharp(match_low(genb, ref), ref, nb)
+            fb = 1.0
+            gb2 = genb if genb.size == ref.size else genb.resize(ref.size, Image.LANCZOS)
             ggb = gb2 if gb2.size == ref.size else gb2.resize(ref.size, Image.LANCZOS)
             rab = np.asarray(ref.convert('RGB'), dtype=np.float32)
             gbb = np.asarray(ggb.convert('RGB'), dtype=np.float32)
@@ -411,10 +458,13 @@ def build(day, tag, mood, debug=False):
     # лица, и чем дальше от глаз, тем сильнее она «уезжает» от арта. С большим
     # запасом на наклонённом лице (2-й день, 2-я поза) видно ДВА лица друг на
     # друге — нос и контур щеки в генерате стоят иначе.
-    gx0 = (box[0] + B[0] - (B[2] - B[0]) * 0.05) / W
-    gy0 = (box[1] + B[1] - (B[3] - B[1]) * 0.10) / H
-    gx1 = (box[0] + B[2] + (B[2] - B[0]) * 0.05) / W
-    gy1 = (box[1] + B[3] + (B[3] - B[1]) * 0.10) / H
+    # Поля по краям патча: окно растушёвки срезает альфу у самой кромки, и
+    # раньше оно приходилось ровно на внешний глаз — из-под закрытого века
+    # проглядывало старое открытое. Даём пятую часть полосы с каждой стороны.
+    gx0 = (box[0] + B[0] - (B[2] - B[0]) * 0.42) / W
+    gy0 = (box[1] + B[1] - (B[3] - B[1]) * 0.36) / H
+    gx1 = (box[0] + B[2] + (B[2] - B[0]) * 0.42) / W
+    gy1 = (box[1] + B[3] + (B[3] - B[1]) * 0.36) / H
     gx0, gy0 = max(0.0, gx0), max(0.0, gy0)
     gx1, gy1 = min(1.0, gx1), min(1.0, gy1)
     cbox = (round(W * gx0), round(H * gy0), round(W * gx1), round(H * gy1))
@@ -424,7 +474,7 @@ def build(day, tag, mood, debug=False):
     # Альфа обязана дойти до нуля у самой кромки: иначе на границе кропа
     # остаётся прямая линия и патч читается как прямоугольник поверх лица.
     win = Image.new('L', full.size, 0)
-    mx, my = max(2, int(full.width * 0.10)), max(2, int(full.height * 0.10))
+    mx, my = max(2, int(full.width * 0.05)), max(2, int(full.height * 0.06))
     ImageDraw.Draw(win).rounded_rectangle(
         [mx, my, full.width - 1 - mx, full.height - 1 - my],
         radius=int(min(full.size) * 0.26), fill=255)
@@ -437,10 +487,19 @@ def build(day, tag, mood, debug=False):
     # пятнышки на коже. Поэтому на краю патч не темнее арта больше чем на 28
     # уровней — остаются только плавные переходы (румянец, тени).
     arr_ = np.asarray(full).astype(np.float32)
-    art_c = np.asarray(flat.crop(cbox).convert('RGB'), dtype=np.float32)
+    # цвет «под патчем» берём из самого арта: в прозрачных пикселях там лежит
+    # залитый край фигуры, а не зелёная плашка flat
+    art_c = np.asarray(art.crop(cbox).convert('RGB'), dtype=np.float32)
     al_ = arr_[..., 3:4] / 255.0
     low_mask = al_ < 0.86
     arr_[..., :3] = np.where(low_mask, np.maximum(arr_[..., :3], art_c - 28.0), arr_[..., :3])
+    # ЗЕЛЁНЫЙ ФОН ГЕНЕРАТА: кроп рисовался на хромакее, и в полупрозрачной
+    # растушёвке оставался зелёный цвет. На телефоне это читалось зелёным
+    # ореолом вокруг лица. Под кромкой подставляем цвет арта.
+    dg_ = arr_[..., 1] - np.maximum(arr_[..., 0], arr_[..., 2])
+    greenish = (dg_ > 18)[..., None]
+    arr_[..., :3] = np.where(greenish, art_c, arr_[..., :3])
+    arr_[..., :3] = np.where(al_ < 0.30, art_c, arr_[..., :3])
     full = Image.fromarray(np.clip(arr_, 0, 255).astype('uint8'), 'RGBA')
 
     # Точечная чистка: одиночные тёмные точки (след смещённой ресницы/тени)
