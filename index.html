@@ -1562,10 +1562,10 @@ const DAY_STAGES = [
     accent: ['#ff4dc4', '#9146FF'],
     wall: ['#2b1638', '#0f0a16'],
     stages: [
-      { quote: '«Ой, свет включили... Я думала, будет уютнее. Ладно, привыкну, только не смейтесь.»', label: 'Стеснительный старт', goal: 'Снять плед с плеч 🛋', note: 'плед на плечах, тихий голос', art: 'art_day2_stage1.png' },
-      { quote: '«Плед куда-то делся... Зато теперь видно, какой у меня свет. Красиво же?»', label: 'Первое расслабление', goal: 'Включить неон 💜', note: 'плед сполз, подсветка включена', art: 'art_day2_stage2.png' },
-      { quote: '«Неоновая ночь, говорите... Я под этот свет специально образ подобрала. Нравится?»', label: 'Полная сцена', goal: 'Неоновый образ в кадре 🎆', note: 'неоновый образ, взгляд в камеру', art: 'art_day2_stage3.png' },
-      { quote: '«Мы в топе! Я в шоке... Чат, вы лучшие, я сейчас расплачусь.»', label: 'Финал саб-гоала', goal: 'Топ категории 🚀', note: 'конфетти, стрим взлетает в топ', art: 'art_day2_stage4.png' }
+      { quote: '«Ой, свет включили... Я думала, будет уютнее. Ладно, привыкну, только не смейтесь.»', label: 'Стеснительный старт', goal: 'Снять плед с плеч 🛋', note: 'плед на плечах, тихий голос', art: 'assets/art_day2_sg1.webp' },
+      { quote: '«Плед куда-то делся... Зато теперь видно, какой у меня свет. Красиво же?»', label: 'Первое расслабление', goal: 'Включить неон 💜', note: 'плед сполз, подсветка включена', art: 'assets/art_day2_sg2.webp' },
+      { quote: '«Неоновая ночь, говорите... Я под этот свет специально образ подобрала. Нравится?»', label: 'Полная сцена', goal: 'Неоновый образ в кадре 🎆', note: 'неоновый образ, взгляд в камеру', art: 'assets/art_day2_sg3.webp' },
+      { quote: '«Мы в топе! Я в шоке... Чат, вы лучшие, я сейчас расплачусь.»', label: 'Финал саб-гоала', goal: 'Топ категории 🚀', note: 'конфетти, стрим взлетает в топ', art: 'assets/art_day2_sg4.webp' }
     ]
   },
   {
@@ -1805,26 +1805,53 @@ const ART_REAL = ART_STYLE === 'real';
 const ART_DIR = ART_REAL ? 'assets/real/' : 'assets/';
 const ART_MASTER_W = ART_REAL ? 2340 : 3840;
 
+/* второй день канона 2: геометрия груди своя. Поза 1 — канон, поза 2 полностью
+   закрыта коленями (пропов нет), поза 3 в профиль — видна одна округлость. */
+const BUST_GEO_REAL_D2 = {
+  sg1: { l:[0.462,0.300,0.048,0.040], r:[0.578,0.297,0.055,0.042] },
+  sg2: {},
+  sg3: { r:[0.568,0.295,0.033,0.036] },
+  sg4: { l:[0.447,0.300,0.050,0.042], r:[0.580,0.298,0.054,0.044] },
+};
+const BUST_GEO_D2 = {};
+
 function artTagOf(src){ return (String(src).match(/sg\d/) || [])[0] || ''; }
-function artPath(tag){ return ART_DIR + (ART_REAL ? 'art_real_day1_' : 'art_day1_') + tag + '.webp'; }
-function chestPath(tag, side){ return ART_REAL ? `${ART_DIR}chest_real_${tag}_${side}.webp` : `assets/chest_${tag}_${side}.webp`; }
-function emoPath(tag, mood){ return ART_REAL ? `${ART_DIR}art_real_emo_${tag}_${mood}.webp` : `assets/art_emo_${tag}_${mood}${window.innerWidth > 900 ? '_lg' : ''}.webp`; }
+function artDayOf(src){ const m = String(src).match(/day(\d)/); return m ? m[1] : '1'; }
+function bustGeoOf(day, tag){
+  const set = ART_REAL ? (day === '2' ? BUST_GEO_REAL_D2 : BUST_GEO_REAL) : (day === '2' ? BUST_GEO_D2 : BUST_GEO);
+  return (tag && set[tag]) || null;
+}
+/* имена файлов дня 2 несут день: art_real_day2_sgN, chest_real_day2_sgN_side */
+function artPath(src){
+  const tag = artTagOf(src), day = artDayOf(src);
+  if (!tag) return src;
+  return ART_REAL ? `${ART_DIR}art_real_day${day}_${tag}.webp` : `assets/art_day${day}_${tag}.webp`;
+}
+function chestPath(day, tag, side){
+  if (!ART_REAL) return day === '2' ? `assets/chest_day2_${tag}_${side}.webp` : `assets/chest_${tag}_${side}.webp`;
+  return day === '2' ? `${ART_DIR}chest_real_day2_${tag}_${side}.webp` : `${ART_DIR}chest_real_${tag}_${side}.webp`;
+}
+function emoPath(day, tag, mood){
+  if (!ART_REAL) return `assets/art_emo_${day === '2' ? 'day2_' : ''}${tag}_${mood}${window.innerWidth > 900 ? '_lg' : ''}.webp`;
+  return day === '2' ? `${ART_DIR}art_real_emo_day2_${tag}_${mood}.webp` : `${ART_DIR}art_real_emo_${tag}_${mood}.webp`;
+}
 const CHEST_BOX = { x0:0.22, y0:0.12, x1:0.78, y1:0.50 };
 
 function chestParts(){
   return [document.getElementById('artChestL'), document.getElementById('artChestR')];
 }
 
-function chestSet(tag){
-  const geo = tag && (ART_REAL ? BUST_GEO_REAL : BUST_GEO)[tag];
+function chestSet(tag, day){
+  day = day || '1';
+  const geo = bustGeoOf(day, tag);
   const parts = chestParts();
   for (let i = 0; i < 2; i++){
     const part = parts[i];
     if (!part) continue;
-    if (!geo){ part.style.backgroundImage = ''; continue; }
     const side = i === 0 ? 'l' : 'r';
+    if (!geo || !geo[side]){ part.style.backgroundImage = ''; continue; }
     const [cx, cy, rx, ry] = geo[side];
-    part.style.backgroundImage = `url("${chestPath(tag, side)}")`;
+    part.style.backgroundImage = `url("${chestPath(day, tag, side)}")`;
     const ox = (cx - CHEST_BOX.x0) / (CHEST_BOX.x1 - CHEST_BOX.x0) * 100;
     const oy = (cy - ry * 0.85 - CHEST_BOX.y0) / (CHEST_BOX.y1 - CHEST_BOX.y0) * 100;
     part.style.transformOrigin = ox.toFixed(2) + '% ' + oy.toFixed(2) + '%';
@@ -1847,7 +1874,8 @@ function emoEls(){
   return [document.getElementById('artEmoShy'), document.getElementById('artEmoBlink')];
 }
 
-function emoSet(tag){
+function emoSet(tag, day){
+  day = day || '1';
   const [shy, blink] = emoEls();
   if (!shy || !blink) return;
   clearTimeout(EMO.blinkTimer);
@@ -1864,7 +1892,7 @@ function emoSet(tag){
   }
   [['shy', shy], ['blink', blink]].forEach(([mood, el]) => {
     el.onerror = () => { el.classList.remove('on'); };
-    el.src = emoPath(tag, mood);
+    el.src = emoPath(day, tag, mood);
   });
   emoSchedule();
   if (/emo=hold/.test(location.search)) emoSmile(true);
@@ -2392,8 +2420,9 @@ function loadArt(src){
   artToken++;
   const token = artToken;
   el.artImg.classList.remove('on');
+  const artDay = artDayOf(src);        /* день из пути STAGES, до пересборки стиля */
   const srcTag = artTagOf(src);
-  if (srcTag) src = artPath(srcTag);   /* путь приходит из STAGES как аниме — переводим в текущий стиль */
+  if (srcTag) src = artPath(src);   /* путь приходит из STAGES как аниме — переводим в текущий стиль */
   const sm = src.replace('.webp', '_sm.webp');
   const probe = new Image();
   probe.onload = () => {
@@ -2405,19 +2434,20 @@ function loadArt(src){
     const chest = el.artChest;
     const tag = (src.match(/sg\d/) || [])[0];
     if (chest){
-      chestSet(tag);
-      chest.classList.toggle('on', !!tag);
-      chest.classList.toggle('breathe', tag === 'sg3' || tag === 'sg4');
+      chestSet(tag, artDay);
+      const hasChest = !!(tag && Object.keys(bustGeoOf(artDay, tag) || {}).length);
+      chest.classList.toggle('on', hasChest);
+      chest.classList.toggle('breathe', hasChest && (tag === 'sg3' || tag === 'sg4'));
     }
     motionSync(src);
-    emoSet(tag || null);
+    emoSet(tag || null, artDay);
   };
   probe.onerror = () => {
     if (token !== artToken) return;
     el.artImg.classList.remove('on');
     el.artImg.removeAttribute('src');
     if (el.artChest){ el.artChest.classList.remove('on', 'hit', 'breathe'); chestSet(null); }
-    emoSet(null);
+    emoSet(null, artDay);
     motionSync('');
   };
   probe.src = artVariant(src);
