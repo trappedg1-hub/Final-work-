@@ -24,12 +24,21 @@ CHEST_BOX = PL.CHEST_BOX
 SIDES = PL.SIDES
 
 # (cx, cy, rx, ry) в долях кадра спрайта; None — округлость не видна
+# Маски шире прежних: проп обязан накрывать ВСЮ округлость вместе с низом
+# (иначе двигался «пятачок» и физика читалась вялой). Растушёвка при этом
+# гаснет до контура ткани — гейт по краям в prep_light это держит.
 BUST_D3 = {
-    'sg1': ((0.478, 0.332, 0.045, 0.038), (0.596, 0.322, 0.045, 0.038)),   # растяжка, руки за головой
-    'sg2': ((0.245, 0.385, 0.048, 0.040), (0.375, 0.372, 0.048, 0.040)),   # откинулась, ноги на столе
-    'sg3': ((0.455, 0.378, 0.046, 0.038), (0.578, 0.375, 0.046, 0.038)),   # «V» ногами, руки за головой
-    'sg4': ((0.478, 0.352, 0.044, 0.037), (0.570, 0.348, 0.044, 0.037)),   # финал: бёдра вперёд
+    'sg1': ((0.470, 0.330, 0.055, 0.045), (0.598, 0.320, 0.058, 0.045)),   # растяжка, сидит наискосок
+    'sg2': ((0.245, 0.385, 0.056, 0.046), (0.375, 0.372, 0.056, 0.046)),   # откинулась, ноги на столе
+    'sg3': ((0.455, 0.378, 0.054, 0.044), (0.578, 0.375, 0.054, 0.044)),   # «V» ногами, руки за головой
+    'sg4': ((0.470, 0.352, 0.052, 0.043), (0.575, 0.348, 0.052, 0.043)),   # финал: нога поднята
 }
+
+# наклон корпуса по позе (град, как CHEST_TILT в index.html). Контейнер пропа
+# в вёрстке повёрнут на этот угол, поэтому ОКНО в арте поворачиваем так же —
+# иначе повёрнутый проп не совпадает с вырезом и в груди видны чёрные серпы.
+TILT_D3 = {'sg1': -7, 'sg2': -10, 'sg3': -2, 'sg4': -3}
+
 
 def _sym(tbl):
     """Радиусы слева и справа выравниваем: иначе одна сторона заметно меньше
@@ -78,6 +87,11 @@ def chest_patch(tag):
         arr[..., 3] = (np.array(mask).astype(np.float32) * (arr[..., 3].astype(np.float32) / 255)).astype('uint8')
         rgb = Image.fromarray(arr[..., :3].astype('uint8')).filter(ImageFilter.GaussianBlur(9))
         arr[..., :3] = np.where((arr[..., 3] == 0)[..., None], np.array(rgb), arr[..., :3])
+        # Контейнер пропа в вёрстке повёрнут на наклон корпуса (CHEST_TILT).
+        # Содержимое пропа поэтому пре-поворачиваем на ОБРАТНЫЙ угол вокруг той
+        # же точки: в покое поворот компенсируется и проп лежит ровно на арте,
+        # а пружина деформирует грудь вдоль тела, а не по вертикали кадра.
+        arr = np.clip(_derotate(arr, tag, mw, mh, -TILT_D3.get(tag, 0)), 0, 255).astype('uint8')
         out = os.path.join(A, f'chest_real_day3_{tag}_{side}.webp')
         Image.fromarray(arr, 'RGBA').save(out, 'WEBP', quality=92, alpha_quality=100, method=6)
         print(f'  chest_real_day3_{tag}_{side}.webp {mw}x{mh} {os.path.getsize(out)/1e3:.0f} KB')
@@ -115,6 +129,107 @@ def punch_hole(tag):
 
 
 
+HOLE_SCALE = 0.62   # окно заметно меньше пропа: проп накрывает его на всём ходе пружины
+
+
+def _hole_for(tag, size):
+    """Окно под пропом (в пикселях кропа CHEST_BOX) — уменьшенная копия маски.
+
+    Без окна арт под пропом остаётся статичным: кромка ткани внутри маски
+    уезжает и рядом видна её вторая копия («двойная ткань»). Окно вырезает
+    статичную копию, поэтому двигается ОДИН слой, и движение читается как
+    настоящая деформация, а не как «поехавшее пятно».
+    """
+    import cv2
+    mw, mh = size
+    x0, y0, x1, y1 = CHEST_BOX
+    out = np.zeros((mh, mw), dtype=np.float32)
+    # точка вращения контейнера — как в chestSet(): центр между округлостями,
+    # по Y — верх груди
+    geos = [g for g in BUST_D3[tag] if g]
+    mxm = (geos[0][0] + geos[1][0]) / 2
+    mym = min(g[1] for g in geos) - max(g[3] for g in geos)
+    cxc = (mxm - x0) / (x1 - x0) * mw
+    cyc = (mym - y0) / (y1 - y0) * mh
+    th = np.deg2rad(TILT_D3.get(tag, 0))
+    R = np.array([[np.cos(th), -np.sin(th)], [np.sin(th), np.cos(th)]], dtype=np.float32)
+    for side, geo in zip(SIDES, BUST_D3[tag]):
+        if geo is None:
+            continue
+        cx, cy, rx, ry = geo
+        mx = (cx - x0) / (x1 - x0) * mw
+        my = (cy - y0) / (y1 - y0) * mh
+        mrx = rx / (x1 - x0) * mw
+        mry = ry / (y1 - y0) * mh
+        crop = getattr(_hole_for, 'crop')
+        m = np.array(PL._bulge_mask((mw, mh), mx, my, mrx, mry, crop), dtype=np.float32)
+        # 1) ужимаем окно вокруг верха округлости (там же ось пружины)
+        ox, oy = mx, my - mry * 0.92
+        S = np.array([[HOLE_SCALE, 0, ox * (1 - HOLE_SCALE)],
+                      [0, HOLE_SCALE, oy * (1 - HOLE_SCALE)]], dtype=np.float32)
+        # 2) и поворачиваем вокруг точки контейнера — как повёрнут сам проп
+        A = np.zeros((2, 3), dtype=np.float32)
+        A[:, :2] = R
+        A[:, 2] = R @ (-np.array([cxc, cyc], dtype=np.float32)) + np.array([cxc, cyc], dtype=np.float32)
+        m = cv2.warpAffine(m, S, (mw, mh), flags=cv2.INTER_LINEAR)
+        m = cv2.warpAffine(m, A, (mw, mh), flags=cv2.INTER_LINEAR)
+        out = np.maximum(out, m / 255.0)
+    out = np.clip(out * 255, 0, 255).astype('uint8')
+    return Image.fromarray(out, 'L').filter(ImageFilter.GaussianBlur(5))
+
+
+def punch(tag):
+    """Окно в арте — НЕ используется.
+
+    Отверстие в арте под пропом работает только если проп накрывает его на
+    всём ходе пружины бит-в-бит; на повёрнутом контейнере (наклон корпуса)
+    совпадение уезжает на десяток пикселей и сквозь щель видно фон — на груди
+    появляются тёмные серпы. Поэтому двигаем проп над целым артом, а маска
+    пропа гаснет раньше контура ткани (prep_light._bulge_mask).
+    """
+    from PIL import ImageChops  # noqa: F401
+    for src, dest in ((_master(tag), 'master'), (_sm(tag), 'sm')):
+        if not os.path.exists(src):
+            continue
+        im = Image.open(src).convert('RGBA')
+        W, H = im.size
+        x0, y0 = int(W * CHEST_BOX[0]), int(H * CHEST_BOX[1])
+        x1, y1 = int(W * CHEST_BOX[2]), int(H * CHEST_BOX[3])
+        _hole_for.crop = im.crop((x0, y0, x1, y1))
+        hole = Image.new('L', (W, H), 0)
+        hole.paste(_hole_for(tag, (x1 - x0, y1 - y0)), (x0, y0))
+        arr = np.array(im)
+        a = arr[..., 3].astype(np.float32)
+        arr[..., 3] = np.clip(a * (1.0 - 0.97 * np.array(hole).astype(np.float32) / 255.0), 0, 255).astype('uint8')
+        q = 90 if dest == 'master' else 86
+        Image.fromarray(arr, 'RGBA').save(src, 'WEBP', quality=q, alpha_quality=100, method=6)
+        print(f'  окно: {os.path.basename(src)} {W}x{H} {os.path.getsize(src)/1e6:.2f} MB')
+
+
+def _container_xy(tag, mw, mh):
+    """Точка вращения контейнера (как chestSet в index.html) в пикселях кропа."""
+    x0, y0, x1, y1 = CHEST_BOX
+    geos = [g for g in BUST_D3[tag] if g]
+    mxm = (geos[0][0] + geos[1][0]) / 2
+    mym = min(g[1] for g in geos) - max(g[3] for g in geos)
+    return (mxm - x0) / (x1 - x0) * mw, (mym - y0) / (y1 - y0) * mh
+
+
+def _derotate(arr, tag, mw, mh, deg):
+    """Поворот содержимого пропа вокруг точки контейнера (cv2, бикубика)."""
+    import cv2
+    if abs(deg) < 1e-6:
+        return arr
+    th = np.deg2rad(deg)
+    R = np.array([[np.cos(th), -np.sin(th)], [np.sin(th), np.cos(th)]], dtype=np.float32)
+    cx, cy = _container_xy(tag, mw, mh)
+    A = np.zeros((2, 3), dtype=np.float32)
+    A[:, :2] = R
+    A[:, 2] = R @ (-np.array([cx, cy], dtype=np.float32)) + np.array([cx, cy], dtype=np.float32)
+    return cv2.warpAffine(arr.astype(np.float32), A, (mw, mh), flags=cv2.INTER_LANCZOS4,
+                          borderValue=(0, 0, 0, 0))
+
+
 def _level(fmt, tag):
     """Выравниваем «массу» масок левой и правой груди: перекос читается как
     «не ровно»."""
@@ -143,5 +258,5 @@ if __name__ == '__main__':
     for tag in ('sg1', 'sg2', 'sg3', 'sg4'):
         print(f'{tag}:')
         chest_patch(tag)
-        _level(_FMT, tag)   # прокола нет: маска ложится на целый арт
+        _level(_FMT, tag)   # окно (punch) не режем: см. комментарий в punch()
     print('готово')
