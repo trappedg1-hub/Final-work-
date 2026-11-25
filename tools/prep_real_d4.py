@@ -42,7 +42,10 @@ def main(argv):
         print(f'{tag}:')
         base = Image.open(src).convert('RGB')
         art = HD.sharpen(HD.art_from(base, HD.FACTOR))
-        art = canon().apply(art, soft=0.85)
+        # новые генерации дня 4 нарисованы уже в палитре канона: подгонка LAB
+        # им не нужна и только выбеливает кожу (включается D4_CANON=1)
+        if os.environ.get('D4_CANON') == '1':
+            art = canon().apply(art, soft=0.85)
         PR.save(art, os.path.join(OUT, f'art_real_day4_{tag}.webp'), master=True)
         PR.save(art, os.path.join(OUT, f'art_real_day4_{tag}_sm.webp'), master=False)
 
