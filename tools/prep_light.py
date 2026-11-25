@@ -57,6 +57,19 @@ def _bust_mask(size, cx, cy, rx, ry):
     return Image.fromarray(np.maximum(np.array(hull), np.array(core)))
 
 
+def _bulge_mask(size, cx, cy, rx, ry):
+    """Маска груди для физики: ядро по округлости + широкая растушёвка наружу.
+
+    Прокола в кадре больше нет, поэтому маска может быть свободнее: она ложится
+    поверх целого арта, а на краю плавно гаснет. Движение выходит «кругом
+    груди», а не пятном, и не рвёт одежду — маска тянет кожу и ткань вместе.
+    """
+    core = _ellipse_mask(size, cx, cy, rx, ry, 0.80)
+    soft = _ellipse_mask(size, cx, cy, rx, ry, 1.06)
+    soft = soft.filter(ImageFilter.GaussianBlur(max(3, int(min(rx, ry) * 0.30))))
+    return Image.fromarray(np.maximum(np.array(core), np.array(soft)))
+
+
 def _hole_k(rx, ry, box_h):
     """Радиус окна так, чтобы проп на всём ходе пружины оставался над ним.
 

@@ -960,12 +960,12 @@ main{
    padding-bottom — посадочная линия: низ спрайта уходит за кромку стола. */
 .hero .art-tap{
   position:absolute; inset:0; display:flex;
-  align-items:flex-end; justify-content:center;
-  padding-bottom:2%;
+  align-items:flex-start; justify-content:center;
+  padding-top:var(--stack-top, 0%);
 }
 /* стопка: габариты спрайта, внутри — кадр, проп груди и румянец */
 .hero .art-stack{
-  position:relative; height:90%; aspect-ratio:3/4; max-height:100%;
+  position:relative; height:var(--stack-h, 90%); aspect-ratio:3/4;
   flex:0 0 auto; pointer-events:none;
 }
 .hero .art-img{
@@ -1003,38 +1003,38 @@ main{
    затем четыре затухающих колебания. Кейфреймы каждые 4 % от аналитики,
    поэтому переход между ними линейный и не видно ступенек. */
 @keyframes chestJiggle{
-  0%   { transform:translateY(0.000%) scale(1.0000, 1.0000); }
-  4%   { transform:translateY(1.322%) scale(0.9978, 1.0076); }
-  8%   { transform:translateY(2.055%) scale(0.9966, 1.0117); }
-  12%  { transform:translateY(2.219%) scale(0.9963, 1.0127); }
-  16%  { transform:translateY(1.933%) scale(0.9968, 1.0110); }
-  20%  { transform:translateY(1.367%) scale(0.9977, 1.0078); }
-  24%  { transform:translateY(0.699%) scale(0.9988, 1.0040); }
-  28%  { transform:translateY(0.078%) scale(0.9999, 1.0004); }
-  32%  { transform:translateY(-0.394%) scale(1.0007, 0.9977); }
-  36%  { transform:translateY(-0.671%) scale(1.0011, 0.9962); }
-  40%  { transform:translateY(-0.752%) scale(1.0013, 0.9957); }
-  44%  { transform:translateY(-0.674%) scale(1.0011, 0.9962); }
-  48%  { transform:translateY(-0.492%) scale(1.0008, 0.9972); }
-  52%  { transform:translateY(-0.268%) scale(1.0004, 0.9985); }
-  56%  { transform:translateY(-0.054%) scale(1.0001, 0.9997); }
-  60%  { transform:translateY(0.114%) scale(0.9998, 1.0007); }
-  64%  { transform:translateY(0.217%) scale(0.9996, 1.0012); }
-  68%  { transform:translateY(0.254%) scale(0.9996, 1.0014); }
-  72%  { transform:translateY(0.234%) scale(0.9996, 1.0013); }
-  76%  { transform:translateY(0.176%) scale(0.9997, 1.0010); }
-  80%  { transform:translateY(0.102%) scale(0.9998, 1.0006); }
-  84%  { transform:translateY(0.028%) scale(1.0000, 1.0002); }
-  88%  { transform:translateY(-0.032%) scale(1.0001, 0.9998); }
-  92%  { transform:translateY(-0.070%) scale(1.0001, 0.9996); }
-  96%  { transform:translateY(-0.085%) scale(1.0001, 0.9995); }
-  100% { transform:translateY(0.000%) scale(1.0000, 1.0000); }
+  0% { transform:translateY(0.000%) scale(1.0000, 1.0000); }
+  4% { transform:translateY(0.932%) scale(0.9667, 1.0577); }
+  8% { transform:translateY(1.341%) scale(0.9521, 1.0830); }
+  12% { transform:translateY(1.264%) scale(0.9549, 1.0782); }
+  16% { transform:translateY(0.860%) scale(0.9693, 1.0532); }
+  20% { transform:translateY(0.334%) scale(0.9881, 1.0207); }
+  24% { transform:translateY(-0.134%) scale(1.0048, 0.9917); }
+  28% { transform:translateY(-0.431%) scale(1.0154, 0.9733); }
+  32% { transform:translateY(-0.525%) scale(1.0187, 0.9675); }
+  36% { transform:translateY(-0.447%) scale(1.0160, 0.9723); }
+  40% { transform:translateY(-0.268%) scale(1.0096, 0.9834); }
+  44% { transform:translateY(-0.066%) scale(1.0024, 0.9959); }
+  48% { transform:translateY(0.096%) scale(0.9966, 1.0060); }
+  52% { transform:translateY(0.186%) scale(0.9934, 1.0115); }
+  56% { transform:translateY(0.199%) scale(0.9929, 1.0123); }
+  60% { transform:translateY(0.153%) scale(0.9945, 1.0095); }
+  64% { transform:translateY(0.078%) scale(0.9972, 1.0048); }
+  68% { transform:translateY(0.003%) scale(0.9999, 1.0002); }
+  72% { transform:translateY(-0.051%) scale(1.0018, 0.9968); }
+  76% { transform:translateY(-0.076%) scale(1.0027, 0.9953); }
+  80% { transform:translateY(-0.073%) scale(1.0026, 0.9955); }
+  84% { transform:translateY(-0.050%) scale(1.0018, 0.9969); }
+  88% { transform:translateY(-0.020%) scale(1.0007, 0.9987); }
+  92% { transform:translateY(0.007%) scale(0.9998, 1.0004); }
+  96% { transform:translateY(0.024%) scale(0.9991, 1.0015); }
+  100% { transform:translateY(0.030%) scale(0.9989, 1.0019); }
 }
 .hero .art-chest.hit i{ animation:chestJiggle 1.5s linear; }
 /* дыхание: на 4-й стадии грудь тяжелее — дышит заметнее */
 @keyframes chestBreathe{
-  0%,100% { transform:translateY(0)     scale(1, 1); }
-  50%     { transform:translateY(.35%)  scale(1, 1.006); }
+  0%,100% { transform:translateY(0)      scale(1, 1); }
+  50%     { transform:translateY(.18%)   scale(0.993, 1.028); }
 }
 .hero .art-chest.breathe i{ animation:chestBreathe var(--breathe,4.6s) ease-in-out infinite; }
 .hero .art-chest.hit.breathe i{ animation:chestJiggle 1.5s linear; }
@@ -1068,8 +1068,7 @@ main{
 }
 /* поза 4: камера ближе, стол уходит из кадра */
 /* стадия 4: она отодвигается назад и задирает ножки — ступни ложатся на кромку стола */
-#scene.stage-4 .art-tap{ padding-bottom:16.5%; }
-#scene.stage-4 .art-stack{ height:80%; }
+/* кадрирование по позе задаёт FRAME в JS (высота стопки и отступ сверху) */
 
 .hero-glow{
   position:absolute; left:-10%; right:-10%; bottom:-6%; height:62%; z-index:2; pointer-events:none;
@@ -1833,9 +1832,28 @@ function chestPath(day, tag, side){
 }
 function emoPath(day, tag, mood){
   if (!ART_REAL) return `assets/art_emo_${day === '2' ? 'day2_' : ''}${tag}_${mood}${window.innerWidth > 900 ? '_lg' : ''}.webp`;
-  return day === '2' ? `${ART_DIR}art_real_emo_day2_${tag}_${mood}.webp` : `${ART_DIR}art_real_emo_${tag}_${mood}.webp`;
+  /* день 2: эмоция — отдельный слой ЛИЦА (не весь кадр): поза и свет не меняются,
+     поэтому смена мимики не дёргает тело */
+  return day === '2' ? `${ART_DIR}art_real_face_day2_${tag}_${mood}.webp` : `${ART_DIR}art_real_emo_${tag}_${mood}.webp`;
 }
 const CHEST_BOX = { x0:0.22, y0:0.12, x1:0.78, y1:0.50 };
+
+/* Кадр по позе: [высота стопки в % от сцены, отступ сверху в %].
+   Считано по альфе кадров: голова садится на ~3.5% сверху, фигура занимает
+   всю высоту сцены, низ уходит за столешницу. Раньше все позы жили на 90%
+   и фигура терялась — теперь каждая поза «снимается» со своего расстояния. */
+const FRAME = {
+  '1sg1': [105, 0], '1sg2': [105, 0], '1sg3': [104, 0], '1sg4': [119, -1],
+  '2sg1': [105, 0], '2sg2': [120, -3], '2sg3': [114, -1], '2sg4': [105, 0],
+};
+
+function frameSet(day, tag){
+  const scene = document.getElementById('scene');
+  if (!scene) return;
+  const f = (tag && FRAME[(day || '1') + tag]) || null;
+  scene.style.setProperty('--stack-h', (f ? f[0] : 100) + '%');
+  scene.style.setProperty('--stack-top', (f ? f[1] : 0) + '%');
+}
 
 function chestParts(){
   return [document.getElementById('artChestL'), document.getElementById('artChestR')];
@@ -1868,7 +1886,7 @@ function chestHit(){
 }
 
 /* ---- эмоции: кадры-варианты той же позы (моргание, смущённая улыбка) ---- */
-const EMO = { tag: null, shy: false, blinkTimer: 0, shyTimer: 0 };
+const EMO = { tag: null, shy: false, blinkTimer: 0, shyTimer: 0, ok: { shy: false, blink: false } };
 
 function emoEls(){
   return [document.getElementById('artEmoShy'), document.getElementById('artEmoBlink')];
@@ -1883,6 +1901,8 @@ function emoSet(tag, day){
   EMO.tag = tag || null;
   EMO.shy = false;
   [shy, blink].forEach(el => el.classList.remove('on', 'blink'));
+  EMO.ok.shy = false;
+  EMO.ok.blink = false;
   if (!tag){
     [shy, blink].forEach(el => {
       el.classList.remove('on', 'blink');
@@ -1891,7 +1911,10 @@ function emoSet(tag, day){
     return;
   }
   [['shy', shy], ['blink', blink]].forEach(([mood, el]) => {
-    el.onerror = () => { el.classList.remove('on'); };
+    /* битый кадр не показываем вообще: иначе браузер рисует на месте арта
+       значок битой картинки — на тёмной сцене это «?» посреди девушки */
+    el.onload = () => { EMO.ok[mood] = true; };
+    el.onerror = () => { EMO.ok[mood] = false; el.classList.remove('on'); };
     el.src = emoPath(day, tag, mood);
   });
   emoSchedule();
@@ -1910,7 +1933,7 @@ function emoSchedule(){
 /* моргание: кат на 100–130 мс, иногда двойное */
 function emoBlink(ms){
   const [, blink] = emoEls();
-  if (!blink || !EMO.tag || !blink.getAttribute('src')) return;
+  if (!blink || !EMO.tag || !EMO.ok.blink) return;
   blink.classList.add('blink', 'on');
   setTimeout(() => {
     blink.classList.remove('on');
@@ -1927,7 +1950,7 @@ function emoBlink(ms){
 /* смущённая улыбка: держится несколько секунд после сильного события */
 function emoSmile(on, ms){
   const [shy] = emoEls();
-  if (!shy || !EMO.tag) return;
+  if (!shy || !EMO.tag || (on && !EMO.ok.shy)) return;
   EMO.shy = !!on;
   shy.classList.toggle('on', !!on);
   clearTimeout(EMO.shyTimer);
@@ -2439,6 +2462,7 @@ function loadArt(src){
       chest.classList.toggle('on', hasChest);
       chest.classList.toggle('breathe', hasChest && (tag === 'sg3' || tag === 'sg4'));
     }
+    frameSet(artDay, tag);
     motionSync(src);
     emoSet(tag || null, artDay);
   };

@@ -59,7 +59,7 @@ def chest_patch(tag):
         my = (cy - y0) / (y1 - y0) * mh
         mrx = rx / (x1 - x0) * mw
         mry = ry / (y1 - y0) * mh
-        mask = PL._bust_mask((mw, mh), mx, my, mrx, mry)
+        mask = PL._bulge_mask((mw, mh), mx, my, mrx, mry)
         arr = np.array(crop)
         arr[..., 3] = (np.array(mask).astype(np.float32) * (arr[..., 3].astype(np.float32) / 255)).astype('uint8')
         rgb = Image.fromarray(arr[..., :3].astype('uint8')).filter(ImageFilter.GaussianBlur(9))
@@ -102,6 +102,5 @@ def punch_hole(tag):
 if __name__ == '__main__':
     for tag in ('sg1', 'sg2', 'sg3', 'sg4'):
         print(f'{tag}:')
-        chest_patch(tag)
-        punch_hole(tag)
+        chest_patch(tag)   # прокола нет: маска ложится на целый арт
     print('готово')
