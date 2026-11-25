@@ -57,7 +57,7 @@ def _bust_mask(size, cx, cy, rx, ry):
     return Image.fromarray(np.maximum(np.array(hull), np.array(core)))
 
 
-def _bulge_mask(size, cx, cy, rx, ry):
+def _bulge_mask(size, cx, cy, rx, ry, img=None):
     """Маска груди для физики: ядро по округлости + широкая растушёвка наружу.
 
     Прокола в кадре больше нет, поэтому маска может быть свободнее: она ложится
@@ -66,10 +66,29 @@ def _bulge_mask(size, cx, cy, rx, ry):
     """
     # ядро — только сама округлость, растушёвка гаснет ДО контура груди:
     # иначе маска заезжает на рукав и тянет ткань, которой двигаться незачем
-    core = _ellipse_mask(size, cx, cy, rx, ry, 0.62)
-    soft = _ellipse_mask(size, cx, cy, rx, ry, 0.90)
-    soft = soft.filter(ImageFilter.GaussianBlur(max(2, int(min(rx, ry) * 0.13))))
-    return Image.fromarray(np.maximum(np.array(core), np.array(soft)))
+    core = _ellipse_mask(size, cx, cy, rx, ry, 0.54)
+    soft = _ellipse_mask(size, cx, cy, rx, ry, 0.80)
+    soft = soft.filter(ImageFilter.GaussianBlur(max(2, int(min(rx, ry) * 0.10))))
+    core_a = np.array(core).astype(np.float32) / 255.0
+    soft_a = np.array(soft).astype(np.float32) / 255.0
+    m = np.maximum(core_a, soft_a)
+
+    if img is not None:
+        # маска гаснет там, где в кадре проходит контур: кромка одежды, рукав,
+        # шов. Иначе эти пиксели уезжают вместе с грудью и край ткани «дышит»
+        g = np.asarray(img.convert('L').filter(ImageFilter.GaussianBlur(1.2)), dtype=np.float32)
+        gx = np.zeros_like(g); gy = np.zeros_like(g)
+        gx[:, 1:-1] = g[:, 2:] - g[:, :-2]
+        gy[1:-1, :] = g[2:, :] - g[:-2, :]
+        mag = np.hypot(gx, gy)
+        edge = (mag > 26).astype(np.float32) * 255.0
+        edge = np.asarray(Image.fromarray(edge.astype('uint8'), 'L')
+                          .filter(ImageFilter.MaxFilter(7))
+                          .filter(ImageFilter.GaussianBlur(6)), dtype=np.float32) / 255.0
+        # гасим у контуров только растушёвку; ядро внутри груди остаётся целым,
+        # иначе внутренние складки ткани съедают всю маску и движение пропадает
+        m = np.maximum(core_a * 0.92, soft_a * (1.0 - 0.92 * edge))
+    return Image.fromarray((np.clip(m, 0, 1) * 255).astype('uint8'), 'L')
 
 
 def _hole_k(rx, ry, box_h):
