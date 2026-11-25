@@ -306,18 +306,22 @@ def build(day, tag, mood, debug=False):
 
     # Ядро — по каждому глазу почти в полную силу: иначе закрытые веки
     # ложатся поверх открытых с альфой ~0.4 и моргания не видно вообще.
+    eh_hard = max((b[3] - b[1]) for b in EYES[key]) * th
     hard = Image.new('L', (tw, th), 0)
     dh = ImageDraw.Draw(hard)
     for b in EYES[key]:
         e = (b[0] * tw, b[1] * th, b[2] * tw, b[3] * th)
         ew_, eh_ = e[2] - e[0], e[3] - e[1]
-        # Низ расширяем: под глазом остаётся тёмная линия нижних ресниц, и в
-        # растушёвке она просвечивала чёрными точками на закрытом веке.
-        dh.rectangle([e[0] - ew_ * 0.30, e[1] - eh_ * 0.10,
-                      e[2] + ew_ * 0.30, e[3] + eh_ * 0.60], fill=255)
+        # ЯДРО — ОВАЛ ПО ГЛАЗУ, а не прямоугольник. Прямоугольник (было
+        # 0.30ew/0.60eh) накрывал щёку и лоб непрозрачным куском генерата: тон
+        # у него чуть иной, чем у арта, и в кадре это читалось полупрозрачным
+        # серым квадратом, а лицо «меняло цвет» при моргании.
+        cx, cy = (e[0] + e[2]) / 2, (e[1] + e[3]) / 2 + eh_ * 0.04
+        rx, ry = ew_ * 0.60, eh_ * 0.66
+        dh.ellipse([cx - rx, cy - ry, cx + rx, cy + ry], fill=255)
     # кромку ядра растушёвываем сильнее: при 2 px на коже была видна прямая
     # граница прямоугольника («стеклянная плашка» над глазом)
-    hard = hard.filter(ImageFilter.GaussianBlur(5 * S))
+    hard = hard.filter(ImageFilter.GaussianBlur(max(2.0, eh_hard * 0.10)))
     # Растушёвка — ВОКРУГ КАЖДОГО ГЛАЗА, а не общим овалом на всю полосу:
     # у наклонённой головы в полосу попадает бровь, и её смещённая копия из
     # генерата ложилась второй дугой над веком.
@@ -326,10 +330,14 @@ def build(day, tag, mood, debug=False):
     for b in EYES[key]:
         e = (b[0] * tw, b[1] * th, b[2] * tw, b[3] * th)
         cx, cy = (e[0] + e[2]) / 2, (e[1] + e[3]) / 2
-        rx, ry = (e[2] - e[0]) / 2 * 1.70, (e[3] - e[1]) / 2 * 1.55
+        # Овал держим ВПЛОТНУЮ к глазу: раньше он был 1.7x/1.55x и полупрозрачной
+        # растушёвкой накрывал щёку и лоб. Тон генерата чуть иной, чем у арта, и
+        # в кадре это читалось полупрозрачным серым прямоугольником, а лицо
+        # «меняло цвет» на моргании.
+        rx, ry = (e[2] - e[0]) / 2 * 1.18, (e[3] - e[1]) / 2 * 1.30
         ds.ellipse((cx - rx, cy - ry, cx + rx, cy + ry), fill=255)
-    soft = soft.filter(ImageFilter.GaussianBlur(max(3, int(min(B[2] - B[0], B[3] - B[1]) * 0.09))))
-    alpha = Image.fromarray(np.maximum(np.array(hard), (np.array(soft) * 0.62).astype('uint8')), 'L')
+    soft = soft.filter(ImageFilter.GaussianBlur(max(2.0, eh_hard * 0.35)))
+    alpha = Image.fromarray(np.maximum(np.array(hard), (np.array(soft) * 0.80).astype('uint8')), 'L')
 
     # Гарантия «старого глаза не видно»: там, где в арте лежит тёмный зрачок,
     # ресницы или зелёная радужка, альфа — полная. Иначе у наклонённого глаза
@@ -339,12 +347,16 @@ def build(day, tag, mood, debug=False):
     lum_ = ra_.mean(axis=2)
     grn_ = (ra_[..., 1] > ra_[..., 0] + 4) & (ra_[..., 1] > ra_[..., 2] + 4)
     eye_px = ((lum_ < 118) | grn_).astype('uint8') * 255
+    # Ограничитель — ОВАЛ по глазу (был прямоугольник: вместе с маской тёмных
+    # пикселей он давал непрозрачные прямоугольные куски вокруг глаз, которые
+    # в кадре читались серым квадратом).
     box_only = np.zeros((th, tw), dtype='uint8')
     for b in EYES[key]:
         e = (b[0] * tw, b[1] * th, b[2] * tw, b[3] * th)
         ew_, eh_ = e[2] - e[0], e[3] - e[1]
-        cv2.rectangle(box_only, (int(e[0] - ew_ * 0.30), int(e[1] - eh_ * 0.10)),
-                      (int(e[2] + ew_ * 0.30), int(e[3] + eh_ * 0.50)), 255, -1)
+        cx, cy = (e[0] + e[2]) / 2, (e[1] + e[3]) / 2
+        cv2.ellipse(box_only, (int(cx), int(cy)), (int(ew_ * 0.72), int(eh_ * 0.80)),
+                    0, 0, 360, 255, -1)
     eye_px = cv2.bitwise_and(eye_px, box_only)
     kn = max(3, int(round(5 * S)))
     eye_px = cv2.dilate(eye_px, np.ones((kn, kn), 'uint8'))
