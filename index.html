@@ -1212,6 +1212,7 @@ main{
     <div class="tw-search" aria-hidden="true"><span class="tw-mag">⌕</span><span>Поиск</span></div>
     <div class="balance"><span class="coin"></span><span id="bitsCount">0</span></div>
     <button class="icon-btn" id="muteBtn" aria-label="Звук">🔊</button>
+    <button class="icon-btn" id="styleBtn" type="button" aria-label="Стиль арта">🎨</button>
     <button class="icon-btn gear-btn" id="gearBtn" type="button" aria-label="Админ-панель" title="Админ-панель">⚙︎</button>
     <i class="goal-line"><i id="barFill"></i></i>
   </header>
@@ -1780,6 +1781,34 @@ const BUST_GEO = {
   sg3: { l:[0.442,0.345,0.063,0.045], r:[0.586,0.340,0.065,0.047] },
   sg4: { l:[0.426,0.430,0.072,0.038], r:[0.596,0.424,0.070,0.040] },
 };
+
+/* ---- стиль арта: «аниме» (день 1, канон 1) и «реализм» (канон 2) ----
+   Геометрия груди у наборов своя: фигура в каноне 2 крупнее и сидит иначе,
+   поэтому маски нельзя тащить из аниме-версии. */
+const BUST_GEO_REAL = {
+  sg1: { l:[0.466,0.352,0.040,0.044], r:[0.570,0.344,0.056,0.046] },
+  sg2: { l:[0.480,0.344,0.043,0.046], r:[0.568,0.336,0.052,0.048] },
+  sg3: { l:[0.460,0.322,0.042,0.040], r:[0.572,0.316,0.045,0.042] },
+  sg4: { l:[0.464,0.328,0.046,0.042], r:[0.574,0.322,0.050,0.044] },
+};
+
+const ART_STYLE_KEY = 'fw_art_style';
+const ART_STYLE = (function(){
+  const q = (new URLSearchParams(location.search).get('style') || '').toLowerCase();
+  if (q === 'real' || q === 'anime'){
+    try { localStorage.setItem(ART_STYLE_KEY, q); } catch (e){}
+    return q;
+  }
+  try { return localStorage.getItem(ART_STYLE_KEY) === 'real' ? 'real' : 'anime'; } catch (e){ return 'anime'; }
+})();
+const ART_REAL = ART_STYLE === 'real';
+const ART_DIR = ART_REAL ? 'assets/real/' : 'assets/';
+const ART_MASTER_W = ART_REAL ? 2340 : 3840;
+
+function artTagOf(src){ return (String(src).match(/sg\d/) || [])[0] || ''; }
+function artPath(tag){ return ART_DIR + (ART_REAL ? 'art_real_day1_' : 'art_day1_') + tag + '.webp'; }
+function chestPath(tag, side){ return ART_REAL ? `${ART_DIR}chest_real_${tag}_${side}.webp` : `assets/chest_${tag}_${side}.webp`; }
+function emoPath(tag, mood){ return ART_REAL ? `${ART_DIR}art_real_emo_${tag}_${mood}.webp` : `assets/art_emo_${tag}_${mood}${window.innerWidth > 900 ? '_lg' : ''}.webp`; }
 const CHEST_BOX = { x0:0.22, y0:0.12, x1:0.78, y1:0.50 };
 
 function chestParts(){
@@ -1787,7 +1816,7 @@ function chestParts(){
 }
 
 function chestSet(tag){
-  const geo = tag && BUST_GEO[tag];
+  const geo = tag && (ART_REAL ? BUST_GEO_REAL : BUST_GEO)[tag];
   const parts = chestParts();
   for (let i = 0; i < 2; i++){
     const part = parts[i];
@@ -1795,7 +1824,7 @@ function chestSet(tag){
     if (!geo){ part.style.backgroundImage = ''; continue; }
     const side = i === 0 ? 'l' : 'r';
     const [cx, cy, rx, ry] = geo[side];
-    part.style.backgroundImage = `url("assets/chest_${tag}_${side}.webp")`;
+    part.style.backgroundImage = `url("${chestPath(tag, side)}")`;
     const ox = (cx - CHEST_BOX.x0) / (CHEST_BOX.x1 - CHEST_BOX.x0) * 100;
     const oy = (cy - ry * 0.85 - CHEST_BOX.y0) / (CHEST_BOX.y1 - CHEST_BOX.y0) * 100;
     part.style.transformOrigin = ox.toFixed(2) + '% ' + oy.toFixed(2) + '%';
@@ -1833,10 +1862,9 @@ function emoSet(tag){
     });
     return;
   }
-  const big = window.innerWidth > 900;
   [['shy', shy], ['blink', blink]].forEach(([mood, el]) => {
     el.onerror = () => { el.classList.remove('on'); };
-    el.src = `assets/art_emo_${tag}_${mood}${big ? '_lg' : ''}.webp`;
+    el.src = emoPath(tag, mood);
   });
   emoSchedule();
   if (/emo=hold/.test(location.search)) emoSmile(true);
@@ -2364,12 +2392,14 @@ function loadArt(src){
   artToken++;
   const token = artToken;
   el.artImg.classList.remove('on');
+  const srcTag = artTagOf(src);
+  if (srcTag) src = artPath(srcTag);   /* путь приходит из STAGES как аниме — переводим в текущий стиль */
   const sm = src.replace('.webp', '_sm.webp');
   const probe = new Image();
   probe.onload = () => {
     if (token !== artToken) return;
     /* srcset отдаёт телефонам лёгкий кадр, 5K остаётся большим экранам */
-    el.artImg.srcset = `${sm} 1170w, ${src} 3840w`;
+    el.artImg.srcset = `${sm} 1170w, ${src} ${ART_MASTER_W}w`;
     el.artImg.src = src;
     el.artImg.classList.add('on');
     const chest = el.artChest;
@@ -2823,6 +2853,20 @@ muteBtn.addEventListener('click', () => {
   if (!muted) sfxPop();
   save();
 });
+
+/* переключатель стиля арта: аниме (канон 1) <-> реализм (канон 2) */
+const styleBtn = document.getElementById('styleBtn');
+if (styleBtn){
+  const label = ART_REAL ? 'Реализм · канон 2' : 'Аниме · канон 1';
+  styleBtn.title = `Стиль арта: ${label} (нажми, чтобы сменить)`;
+  styleBtn.setAttribute('aria-label', `Стиль арта: ${label}`);
+  styleBtn.classList.toggle('style-real', ART_REAL);
+  styleBtn.addEventListener('click', () => {
+    const u = new URL(location.href);
+    u.searchParams.set('style', ART_REAL ? 'anime' : 'real');
+    location.href = u.toString();
+  });
+}
 
 el.modalBtn.addEventListener('click', () => {
   audioInit();
