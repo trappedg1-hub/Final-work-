@@ -88,6 +88,21 @@ def _bulge_mask(size, cx, cy, rx, ry, img=None):
         # гасим у контуров только растушёвку; ядро внутри груди остаётся целым,
         # иначе внутренние складки ткани съедают всю маску и движение пропадает
         m = np.maximum(core_a * 0.92, soft_a * (1.0 - 0.92 * edge))
+
+        # и не трогаем то, что грудью не является: зелёный фон и тёмный стул.
+        # Иначе на краю маски уезжает спинка кресла — «грудь цепляет стул».
+        arr = np.asarray(img.convert('RGB')).astype(np.float32)
+        green = np.linalg.norm(arr - np.array([13.0, 178.0, 38.0])[None, None, :], axis=2) < 62
+        # Стул — это почти чёрный и обесцвеченный; тень на ткани теплее и
+        # светлее (p5 ≈ 85), поэтому порог низкий: иначе тень съедала маску
+        # с одной стороны и грудь выглядела «не ровно».
+        sat = arr.max(axis=2) - arr.min(axis=2)
+        dark = (arr.mean(axis=2) < 62) & (sat < 34)
+        keep = (~(green | dark)).astype(np.float32)
+        keep = np.asarray(Image.fromarray((keep * 255).astype('uint8'), 'L')
+                          .filter(ImageFilter.GaussianBlur(4)), dtype=np.float32) / 255.0
+        keep_hard = (~(green | dark)).astype(np.float32)  # без размытия: стул не трогаем вообще
+        m = m * keep * keep_hard
     return Image.fromarray((np.clip(m, 0, 1) * 255).astype('uint8'), 'L')
 
 

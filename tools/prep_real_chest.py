@@ -32,6 +32,23 @@ BUST_REAL = {
     'sg4': ((0.470, 0.330, 0.048, 0.044), (0.578, 0.324, 0.050, 0.044)),  # топ, колени обняла
 }
 
+def _sym(tbl):
+    """Радиусы слева и справа выравниваем: иначе одна сторона заметно меньше
+    и грудь читается как «не ровно». Центры остаются как измерены."""
+    out = {}
+    for tag, v in tbl.items():
+        v = list(v)
+        if len(v) == 2 and v[0] and v[1]:
+            rx = (v[0][2] + v[1][2]) / 2.0
+            ry = (v[0][3] + v[1][3]) / 2.0
+            v[0] = tuple(v[0][:2]) + (rx, ry)
+            v[1] = tuple(v[1][:2]) + (rx, ry)
+        out[tag] = tuple(v)
+    return out
+
+
+BUST_REAL = _sym(BUST_REAL)
+
 
 def _sm(tag):
     return os.path.join(A, f'art_real_day1_{tag}_sm.webp')
@@ -88,8 +105,35 @@ def punch_hole(tag):
             punch(p, tag, 88)
 
 
+
+
+def _level(fmt, tag):
+    """Выравниваем «массу» масок левой и правой груди: перекос читается как
+    «не ровно»."""
+    items = []
+    for side in SIDES:
+        p = fmt.format(tag=tag, side=side)
+        if os.path.exists(p):
+            items.append((p, np.array(Image.open(p).convert('RGBA'))))
+    if len(items) < 2:
+        return
+    mass = [im[..., 3].astype(np.float32).sum() for _, im in items]
+    tgt = max(mass)
+    for (p, im), m in zip(items, mass):
+        k = min(1.22, tgt / max(m, 1.0))
+        if abs(k - 1.0) < 0.03:
+            continue
+        a = im.copy()
+        a[..., 3] = np.clip(a[..., 3].astype(np.float32) * k, 0, 255).astype('uint8')
+        Image.fromarray(a, 'RGBA').save(p, 'WEBP', quality=92, alpha_quality=100, method=6)
+        print(f'  выровнено {os.path.basename(p)} x{k:.2f}')
+
+
+_FMT = os.path.join(A, 'chest_real_{tag}_{side}.webp')
+
 if __name__ == '__main__':
     for tag in ('sg1', 'sg2', 'sg3', 'sg4'):
         print(f'{tag}:')
-        chest_patch(tag)   # прокола нет: маска ложится на целый арт
+        chest_patch(tag)
+        _level(_FMT, tag)   # прокола нет: маска ложится на целый арт
     print('готово')

@@ -30,9 +30,26 @@ SIDES = PL.SIDES
 BUST_D2 = {
     'sg1': ((0.466, 0.304, 0.048, 0.040), (0.571, 0.297, 0.055, 0.042)),  # канон, нога на ногу
     'sg2': (None, None),                                                   # колени закрывают грудь
-    'sg3': (None, (0.622, 0.334, 0.044, 0.046)),                           # профиль, видна одна
+    'sg3': (None, None),                                                    # со спины груди не видно — и стул не тянуть
     'sg4': ((0.447, 0.300, 0.050, 0.042), (0.580, 0.298, 0.054, 0.044)),   # нога на подлокотнике
 }
+
+def _sym(tbl):
+    """Радиусы слева и справа выравниваем: иначе одна сторона заметно меньше
+    и грудь читается как «не ровно». Центры остаются как измерены."""
+    out = {}
+    for tag, v in tbl.items():
+        v = list(v)
+        if len(v) == 2 and v[0] and v[1]:
+            rx = (v[0][2] + v[1][2]) / 2.0
+            ry = (v[0][3] + v[1][3]) / 2.0
+            v[0] = tuple(v[0][:2]) + (rx, ry)
+            v[1] = tuple(v[1][:2]) + (rx, ry)
+        out[tag] = tuple(v)
+    return out
+
+
+BUST_D2 = _sym(BUST_D2)
 
 
 def _sm(tag):
@@ -99,8 +116,35 @@ def punch_hole(tag):
             punch(p, tag, 88)
 
 
+
+
+def _level(fmt, tag):
+    """Выравниваем «массу» масок левой и правой груди: перекос читается как
+    «не ровно»."""
+    items = []
+    for side in SIDES:
+        p = fmt.format(tag=tag, side=side)
+        if os.path.exists(p):
+            items.append((p, np.array(Image.open(p).convert('RGBA'))))
+    if len(items) < 2:
+        return
+    mass = [im[..., 3].astype(np.float32).sum() for _, im in items]
+    tgt = max(mass)
+    for (p, im), m in zip(items, mass):
+        k = min(1.22, tgt / max(m, 1.0))
+        if abs(k - 1.0) < 0.03:
+            continue
+        a = im.copy()
+        a[..., 3] = np.clip(a[..., 3].astype(np.float32) * k, 0, 255).astype('uint8')
+        Image.fromarray(a, 'RGBA').save(p, 'WEBP', quality=92, alpha_quality=100, method=6)
+        print(f'  выровнено {os.path.basename(p)} x{k:.2f}')
+
+
+_FMT = os.path.join(A, 'chest_real_day2_{tag}_{side}.webp')
+
 if __name__ == '__main__':
     for tag in ('sg1', 'sg2', 'sg3', 'sg4'):
         print(f'{tag}:')
-        chest_patch(tag)   # прокола нет: маска ложится на целый арт
+        chest_patch(tag)
+        _level(_FMT, tag)   # прокола нет: маска ложится на целый арт
     print('готово')

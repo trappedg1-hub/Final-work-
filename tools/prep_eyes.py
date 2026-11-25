@@ -232,10 +232,20 @@ def build(day, tag, mood, debug=False):
     g2 = gen.resize((round(tw * f), round(th * f)), Image.LANCZOS) if f != 1.0 else gen
     log.append(f'{f:.2f}[{dx},{dy}]{score:.2f}')
 
-    m = Image.new('L', (tw, th), 0)
-    ImageDraw.Draw(m).ellipse(B, fill=255)
-    m = m.filter(ImageFilter.GaussianBlur(max(3, int(min(B[2] - B[0], B[3] - B[1]) * BAND_FEATHER))))
-    alpha = m
+    # Ядро — по каждому глазу почти в полную силу: иначе закрытые веки
+    # ложатся поверх открытых с альфой ~0.4 и моргания не видно вообще.
+    hard = Image.new('L', (tw, th), 0)
+    dh = ImageDraw.Draw(hard)
+    for b in EYES[key]:
+        e = (b[0] * tw, b[1] * th, b[2] * tw, b[3] * th)
+        cx, cy = (e[0] + e[2]) / 2, (e[1] + e[3]) / 2
+        rx, ry = (e[2] - e[0]) / 2 * 1.12, (e[3] - e[1]) / 2 * 1.12
+        dh.ellipse((cx - rx, cy - ry, cx + rx, cy + ry), fill=255)
+    hard = hard.filter(ImageFilter.GaussianBlur(max(2, int(min(B[2] - B[0], B[3] - B[1]) * 0.06))))
+    soft = Image.new('L', (tw, th), 0)
+    ImageDraw.Draw(soft).ellipse(B, fill=255)
+    soft = soft.filter(ImageFilter.GaussianBlur(max(3, int(min(B[2] - B[0], B[3] - B[1]) * BAND_FEATHER))))
+    alpha = Image.fromarray(np.maximum(np.array(hard), (np.array(soft) * 0.85).astype('uint8')), 'L')
 
     if mood == 'shy':
         # щёки: кожа ровная — сюда можно класть содержимое генерата широко и мягко
@@ -251,8 +261,10 @@ def build(day, tag, mood, debug=False):
     # ВАЖНО: RGB остаются «прямыми» (не умноженными на альфу). Раньше слои
     # склеивались через alpha_composite, PIL отдавал премноженный цвет — и
     # полупрозрачный край маски ложился на лицо серой тенью («квадрат»).
-    rgb = ref.copy()
-    rgb.paste(g2, (dx, dy))
+    # КАДР С ГЕНЕРАТОМ: в патч должен идти ИМЕННО он, а не базовый арт.
+    # (Раньше здесь оставался неиспользованный буфер, и слой моргал «пустотой».)
+    canvas_rgb = flat.copy()
+    canvas_rgb.paste(g2, (box[0] + dx, box[1] + dy))
 
     # Кадр целиком отдавать вёрстке нельзя: элемент размером с кадр при
     # каждом моргании подсовывает телефону картинку на весь экран, а в
@@ -266,7 +278,7 @@ def build(day, tag, mood, debug=False):
     gx0, gy0 = max(0.0, gx0), max(0.0, gy0)
     gx1, gy1 = min(1.0, gx1), min(1.0, gy1)
     cbox = (round(W * gx0), round(H * gy0), round(W * gx1), round(H * gy1))
-    full = flat.crop(cbox).convert('RGBA')
+    full = canvas_rgb.crop(cbox).convert('RGBA')
     full_alpha = Image.new('L', full.size, 0)
     full_alpha.paste(alpha, (box[0] - cbox[0], box[1] - cbox[1]))
     full.putalpha(full_alpha)
