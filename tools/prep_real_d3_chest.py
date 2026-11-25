@@ -1,0 +1,147 @@
+# -*- coding: utf-8 -*-
+"""Пропы груди для ТРЕТЬЕГО дня канона 2 (йога в офисе).
+
+Геометрия снята по сетке на кадрах assets/real/art_real_day3_sgN_sm.webp.
+Все четыре позы сидят в кресле и грудь видна — пропы есть у всех.
+Радиусы слева и справа выравниваются (иначе одна сторона меньше и читается
+как «грудь не ровно»), центры остаются измеренными.
+
+    python3 tools/prep_real_d3_chest.py
+"""
+import os
+import sys
+
+import numpy as np
+from PIL import Image, ImageFilter
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import prep_light as PL  # noqa: E402
+
+ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+A = os.path.join(ROOT, 'assets', 'real')
+
+CHEST_BOX = PL.CHEST_BOX
+SIDES = PL.SIDES
+
+# (cx, cy, rx, ry) в долях кадра спрайта; None — округлость не видна
+BUST_D3 = {
+    'sg1': ((0.478, 0.332, 0.045, 0.038), (0.596, 0.322, 0.045, 0.038)),   # растяжка, руки за головой
+    'sg2': ((0.245, 0.385, 0.048, 0.040), (0.375, 0.372, 0.048, 0.040)),   # откинулась, ноги на столе
+    'sg3': ((0.455, 0.378, 0.046, 0.038), (0.578, 0.375, 0.046, 0.038)),   # «V» ногами, руки за головой
+    'sg4': ((0.478, 0.352, 0.044, 0.037), (0.570, 0.348, 0.044, 0.037)),   # финал: бёдра вперёд
+}
+
+def _sym(tbl):
+    """Радиусы слева и справа выравниваем: иначе одна сторона заметно меньше
+    и грудь читается как «не ровно». Центры остаются как измерены."""
+    out = {}
+    for tag, v in tbl.items():
+        v = list(v)
+        if len(v) == 2 and v[0] and v[1]:
+            rx = (v[0][2] + v[1][2]) / 2.0
+            ry = (v[0][3] + v[1][3]) / 2.0
+            v[0] = tuple(v[0][:2]) + (rx, ry)
+            v[1] = tuple(v[1][:2]) + (rx, ry)
+        out[tag] = tuple(v)
+    return out
+
+
+BUST_D3 = _sym(BUST_D3)
+
+
+def _sm(tag):
+    return os.path.join(A, f'art_real_day3_{tag}_sm.webp')
+
+
+def _master(tag):
+    return os.path.join(A, f'art_real_day3_{tag}.webp')
+
+
+def chest_patch(tag):
+    im = Image.open(_sm(tag)).convert('RGBA')
+    W, H = im.size
+    x0, y0, x1, y1 = CHEST_BOX
+    crop = im.crop((int(W * x0), int(H * y0), int(W * x1), int(H * y1)))
+    mw, mh = crop.size
+
+    for side, geo in zip(SIDES, BUST_D3[tag]):
+        if geo is None:
+            print(f'  chest_real_day3_{tag}_{side}.webp — нет (округлость не видна)')
+            continue
+        cx, cy, rx, ry = geo
+        mx = (cx - x0) / (x1 - x0) * mw
+        my = (cy - y0) / (y1 - y0) * mh
+        mrx = rx / (x1 - x0) * mw
+        mry = ry / (y1 - y0) * mh
+        mask = PL._bulge_mask((mw, mh), mx, my, mrx, mry, crop)
+        arr = np.array(crop)
+        arr[..., 3] = (np.array(mask).astype(np.float32) * (arr[..., 3].astype(np.float32) / 255)).astype('uint8')
+        rgb = Image.fromarray(arr[..., :3].astype('uint8')).filter(ImageFilter.GaussianBlur(9))
+        arr[..., :3] = np.where((arr[..., 3] == 0)[..., None], np.array(rgb), arr[..., :3])
+        out = os.path.join(A, f'chest_real_day3_{tag}_{side}.webp')
+        Image.fromarray(arr, 'RGBA').save(out, 'WEBP', quality=92, alpha_quality=100, method=6)
+        print(f'  chest_real_day3_{tag}_{side}.webp {mw}x{mh} {os.path.getsize(out)/1e3:.0f} KB')
+
+
+def punch(path, tag, quality=88):
+    im = Image.open(path).convert('RGBA')
+    W, H = im.size
+    hole = Image.new('L', (W, H), 0)
+    box_h = (CHEST_BOX[3] - CHEST_BOX[1]) * H
+    for geo in BUST_D3[tag]:
+        if geo is None:
+            continue
+        cx, cy, rx, ry = geo
+        k = PL._hole_k(rx * W, ry * H, box_h)
+        h = PL._hole_mask((W, H), cx * W, cy * H, rx * W, ry * H, k)
+        hole = Image.fromarray(np.maximum(np.array(hole), np.array(h)))
+    if not hole.getbbox():
+        print(f'  окно: {os.path.basename(path)} — не нужно')
+        return
+    arr = np.array(im)
+    arr[..., 3] = (arr[..., 3].astype(np.float32) * (1 - np.array(hole).astype(np.float32) / 255)).astype('uint8')
+    Image.fromarray(arr, 'RGBA').save(path, 'WEBP', quality=quality, alpha_quality=100, method=6)
+    print(f'  окно: {os.path.basename(path)} {W}x{H} {os.path.getsize(path)/1e6:.2f} MB')
+
+
+def punch_hole(tag):
+    punch(_master(tag), tag, 90)
+    punch(_sm(tag), tag, 86)
+    for mood in ('blink', 'shy'):
+        p = os.path.join(A, f'art_real_face_day3_{tag}_{mood}.webp')
+        if os.path.exists(p):
+            punch(p, tag, 88)
+
+
+
+
+def _level(fmt, tag):
+    """Выравниваем «массу» масок левой и правой груди: перекос читается как
+    «не ровно»."""
+    items = []
+    for side in SIDES:
+        p = fmt.format(tag=tag, side=side)
+        if os.path.exists(p):
+            items.append((p, np.array(Image.open(p).convert('RGBA'))))
+    if len(items) < 2:
+        return
+    mass = [im[..., 3].astype(np.float32).sum() for _, im in items]
+    tgt = max(mass)
+    for (p, im), m in zip(items, mass):
+        k = min(1.22, tgt / max(m, 1.0))
+        if abs(k - 1.0) < 0.03:
+            continue
+        a = im.copy()
+        a[..., 3] = np.clip(a[..., 3].astype(np.float32) * k, 0, 255).astype('uint8')
+        Image.fromarray(a, 'RGBA').save(p, 'WEBP', quality=92, alpha_quality=100, method=6)
+        print(f'  выровнено {os.path.basename(p)} x{k:.2f}')
+
+
+_FMT = os.path.join(A, 'chest_real_day3_{tag}_{side}.webp')
+
+if __name__ == '__main__':
+    for tag in ('sg1', 'sg2', 'sg3', 'sg4'):
+        print(f'{tag}:')
+        chest_patch(tag)
+        _level(_FMT, tag)   # прокола нет: маска ложится на целый арт
+    print('готово')

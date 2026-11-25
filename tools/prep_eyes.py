@@ -28,8 +28,10 @@ MASTER = (1170, 1560)   # ровно разрешение арта, которо
 SRC = {
     '1': os.path.join(ROOT, 'assets', 'real', 'art_real_day1_{tag}_sm.webp'),
     '2': os.path.join(ROOT, 'assets', 'real', 'art_real_day2_{tag}_sm.webp'),
+    '3': os.path.join(ROOT, 'assets', 'real', 'art_real_day3_{tag}_sm.webp'),
 }
-FACECROP = {'1': '_d1f2_{mood}_{tag}.png', '2': '_d2f2_{mood}_{tag}.png'}
+FACECROP = {'1': '_d1f2_{mood}_{tag}.png', '2': '_d2f2_{mood}_{tag}.png',
+            '3': '_d3f2_{mood}_{tag}.png'}
 
 # кроп головы в долях кадра — тот же, по которому готовился кроп под генерацию
 BOX = {
@@ -41,6 +43,10 @@ BOX = {
     '2sg2': (0.355, 0.030, 0.725, 0.240),
     '2sg3': (0.345, 0.025, 0.715, 0.245),
     '2sg4': (0.375, 0.025, 0.725, 0.245),
+    '3sg1': (0.520, 0.060, 0.860, 0.300),
+    '3sg2': (0.050, 0.100, 0.360, 0.330),
+    '3sg3': (0.360, 0.040, 0.660, 0.270),
+    '3sg4': (0.360, 0.040, 0.680, 0.280),
 }
 # глаза в долях КРОПА: (x0,y0,x1,y1) — левый по картинке, правый по картинке
 EYES = {
@@ -52,6 +58,10 @@ EYES = {
     '2sg2': ((0.195, 0.745, 0.315, 0.835), (0.335, 0.595, 0.475, 0.705)),
     '2sg3': ((0.315, 0.475, 0.445, 0.565), (0.525, 0.415, 0.635, 0.505)),
     '2sg4': ((0.175, 0.555, 0.295, 0.645), (0.325, 0.455, 0.465, 0.545)),
+    '3sg1': ((0.290, 0.430, 0.440, 0.560), (0.470, 0.570, 0.620, 0.700)),
+    '3sg2': ((0.360, 0.600, 0.500, 0.720), (0.545, 0.490, 0.680, 0.610)),
+    '3sg3': ((0.350, 0.530, 0.485, 0.640), (0.600, 0.510, 0.725, 0.620)),
+    '3sg4': ((0.295, 0.520, 0.440, 0.630), (0.550, 0.510, 0.690, 0.620)),
 }
 MOODS = ('blink', 'shy')
 GEO = {}                 # key -> [left, top, width, height] в долях кадра
@@ -458,13 +468,21 @@ def build(day, tag, mood, debug=False):
 
 
 def main():
+    import json
     debug = '--debug' in sys.argv
-    for day in ('1', '2'):
+    days = ('1', '2', '3')
+    if '--day' in sys.argv:
+        days = (sys.argv[sys.argv.index('--day') + 1],)
+    geo_path = os.path.join(OUT, 'emo_geo.json')
+    # гео остальных дней не теряем: пишем только пересчитанные ключи
+    if os.path.exists(geo_path):
+        with open(geo_path, encoding='utf-8') as fh:
+            GEO.update(json.load(fh))
+    for day in days:
         for tag in ('sg1', 'sg2', 'sg3', 'sg4'):
             for mood in MOODS:
                 build(day, tag, mood, debug)
-    import json
-    with open(os.path.join(OUT, 'emo_geo.json'), 'w', encoding='utf-8') as fh:
+    with open(geo_path, 'w', encoding='utf-8') as fh:
         json.dump(GEO, fh, ensure_ascii=False, indent=1, sort_keys=True)
     print('готово, геометрия в assets/real/emo_geo.json')
 

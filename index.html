@@ -1574,15 +1574,15 @@ const DAY_STAGES = [
   },
   {
     day: 3,
-    theme: 'Айдол-тур',
-    outfit: 'Сценический костюм · гольфы',
-    accent: ['#4de3ff', '#ffd166'],
-    wall: ['#152238', '#0a0f1a'],
+    theme: 'Горячая йога в офисе',
+    outfit: 'Серый бандо · серые леггинсы',
+    accent: ['#ff9f6b', '#ff6b9d'],
+    wall: ['#2a1d16', '#120c0e'],
     stages: [
-      { quote: '«Привет-привет... Сегодня айдол-программа, я немного волнуюсь перед камерой.»', label: 'Стеснительный старт', goal: 'Выйти на сцену 🎤', note: 'смущённо машет в камеру', art: 'art_day3_stage1.png' },
-      { quote: '«Так, хореография... Кажется, я забыла движение. Но вам же всё равно нравится?»', label: 'Первое расслабление', goal: 'Станцевать хореографию 💃', note: 'отрабатывает хореографию', art: 'art_day3_stage2.png' },
-      { quote: '«Софиты, сцена, чат... Я и правда как на настоящем концерте!»', label: 'Полная сцена', goal: 'Полный айдол-лук ✨', note: 'полный айдол-лук, софиты', art: 'art_day3_stage3.png' },
-      { quote: '«Финальный поклон! Спасибо, что дошли со мной до этой сцены.»', label: 'Финал саб-гоала', goal: 'Финальный поклон 🙇', note: 'финальный поклон, зал ревёт', art: 'art_day3_stage4.png' }
+      { quote: '«Так, офисная йога... Кто вообще сказал, что в кресле можно нормально растянуться?»', label: 'Разминка', goal: 'Размять плечи 🙆', note: 'растяжка в кресле, руки за головой', art: 'assets/art_day3_sg1.webp' },
+      { quote: '«Ну всё, ноги на стол. Стол — мой коврик, а кресло — самая честная опора.»', label: 'Ноги на стол', note: 'ступни на столешнице', goal: 'Закинуть ноги на стол 🦶', art: 'assets/art_day3_sg2.webp' },
+      { quote: '«Смотрите, какой угол... Я вообще-то занимаюсь, а не позирую. Ну ладно, и позирую тоже.»', label: 'Фан-сервис', note: 'поза «V», руки за головой, вся мокрая', goal: 'Полная растяжка 🔥', art: 'assets/art_day3_sg3.webp' },
+      { quote: '«Кажется, леггинсы были на два размера меньше... и они это только что признали. Только чату ни слова.»', label: 'Кульминация', note: 'легинсы не выдержали', goal: 'Дожать саб-гоал 💦', art: 'assets/art_day3_sg4.webp' }
     ]
   },
   {
@@ -1817,10 +1817,22 @@ const BUST_GEO_REAL_D2 = {
 };
 const BUST_GEO_D2 = {};
 
+/* третий день (йога в кресле): все четыре позы сидят, грудь видна везде.
+   Радиусы слева и справа РАВНЫ — иначе читается «грудь не ровно». */
+const BUST_GEO_REAL_D3 = {
+  sg1: { l:[0.478,0.332,0.045,0.038], r:[0.596,0.322,0.045,0.038] },
+  sg2: { l:[0.245,0.385,0.048,0.040], r:[0.375,0.372,0.048,0.040] },
+  sg3: { l:[0.455,0.378,0.046,0.038], r:[0.578,0.375,0.046,0.038] },
+  sg4: { l:[0.478,0.352,0.044,0.037], r:[0.570,0.348,0.044,0.037] },
+};
+const BUST_GEO_D3 = {};
+
 function artTagOf(src){ return (String(src).match(/sg\d/) || [])[0] || ''; }
 function artDayOf(src){ const m = String(src).match(/day(\d)/); return m ? m[1] : '1'; }
 function bustGeoOf(day, tag){
-  const set = ART_REAL ? (day === '2' ? BUST_GEO_REAL_D2 : BUST_GEO_REAL) : (day === '2' ? BUST_GEO_D2 : BUST_GEO);
+  const real = { '1': BUST_GEO_REAL, '2': BUST_GEO_REAL_D2, '3': BUST_GEO_REAL_D3 };
+  const anime = { '1': BUST_GEO, '2': BUST_GEO_D2, '3': BUST_GEO_D3 };
+  const set = (ART_REAL ? real : anime)[day] || {};
   return (tag && set[tag]) || null;
 }
 /* имена файлов дня 2 несут день: art_real_day2_sgN, chest_real_day2_sgN_side */
@@ -1830,14 +1842,15 @@ function artPath(src){
   return ART_REAL ? `${ART_DIR}art_real_day${day}_${tag}.webp` : `assets/art_day${day}_${tag}.webp`;
 }
 function chestPath(day, tag, side){
-  if (!ART_REAL) return day === '2' ? `assets/chest_day2_${tag}_${side}.webp` : `assets/chest_${tag}_${side}.webp`;
-  return day === '2' ? `${ART_DIR}chest_real_day2_${tag}_${side}.webp` : `${ART_DIR}chest_real_${tag}_${side}.webp`;
+  /* день 1 — без номера в имени файла, дни 2 и 3 — с номером */
+  if (!ART_REAL) return day === '1' ? `assets/chest_${tag}_${side}.webp` : `assets/chest_day${day}_${tag}_${side}.webp`;
+  return day === '1' ? `${ART_DIR}chest_real_${tag}_${side}.webp` : `${ART_DIR}chest_real_day${day}_${tag}_${side}.webp`;
 }
 function emoPath(day, tag, mood){
-  if (!ART_REAL) return `assets/art_emo_${day === '2' ? 'day2_' : ''}${tag}_${mood}${window.innerWidth > 900 ? '_lg' : ''}.webp`;
-  /* день 2: эмоция — отдельный слой ЛИЦА (не весь кадр): поза и свет не меняются,
-     поэтому смена мимики не дёргает тело */
-  if (day === '1' || day === '2') return `${ART_DIR}art_real_face_day${day}_${tag}_${mood}.webp`;
+  if (!ART_REAL) return `assets/art_emo_${day === '1' ? '' : 'day' + day + '_'}${tag}_${mood}${window.innerWidth > 900 ? '_lg' : ''}.webp`;
+  /* дни 1-3: эмоция — отдельный слой ЛИЦА (не весь кадр): поза и свет не
+     меняются, поэтому смена мимики не дёргает тело */
+  if (day === '1' || day === '2' || day === '3') return `${ART_DIR}art_real_face_day${day}_${tag}_${mood}.webp`;
   return `${ART_DIR}art_real_emo_${tag}_${mood}.webp`;
 }
 const CHEST_BOX = { x0:0.22, y0:0.12, x1:0.78, y1:0.50 };
@@ -1849,6 +1862,9 @@ const CHEST_BOX = { x0:0.22, y0:0.12, x1:0.78, y1:0.50 };
 const FRAME = {
   '1sg1': [105, 0], '1sg2': [105, 0], '1sg3': [104, 0], '1sg4': [119, -1],
   '2sg1': [105, 0], '2sg2': [120, -3], '2sg3': [114, -1], '2sg4': [105, 0],
+  /* день 3: масштаб подобран по межзрачковому расстоянию (голова одного
+     размера во всех позах), иначе поза 2 «проваливалась» мелкой */
+  '3sg1': [105, 0], '3sg2': [120, -2], '3sg3': [108, -1], '3sg4': [99, 0],
 };
 
 function frameSet(day, tag){

@@ -28,6 +28,10 @@ BOX = {
     '2sg2': (0.355, 0.030, 0.725, 0.240),
     '2sg3': (0.345, 0.025, 0.715, 0.245),
     '2sg4': (0.375, 0.025, 0.725, 0.245),
+    '3sg1': (0.520, 0.060, 0.860, 0.300),
+    '3sg2': (0.050, 0.100, 0.360, 0.330),
+    '3sg3': (0.360, 0.040, 0.660, 0.270),
+    '3sg4': (0.360, 0.040, 0.680, 0.280),
 }
 SRC = {
     '1sg1': 'art_real_day1_sg1.webp',
@@ -38,6 +42,10 @@ SRC = {
     '2sg2': 'art_real_day2_sg2.webp',
     '2sg3': 'art_real_day2_sg3.webp',
     '2sg4': 'art_real_day2_sg4.webp',
+    '3sg1': 'art_real_day3_sg1.webp',
+    '3sg2': 'art_real_day3_sg2.webp',
+    '3sg3': 'art_real_day3_sg3.webp',
+    '3sg4': 'art_real_day3_sg4.webp',
 }
 
 
