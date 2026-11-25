@@ -17,12 +17,18 @@ SM_ROOM = (1200, 1356)
 
 CHEST_BOX = (0.22, 0.12, 0.78, 0.50)   # единый кроп для всех стадий (left, top, right, bottom)
 CHEST_W = 720
-MASK = {                                # центр и радиусы эллипса в долях кадра спрайта
-    'sg1': (0.525, 0.375, 0.085, 0.052),   # кофта, бюст под тканью
-    'sg2': (0.520, 0.385, 0.090, 0.052),
-    'sg3': (0.520, 0.360, 0.095, 0.055),   # топ, открытая грудь
-    'sg4': (0.520, 0.370, 0.100, 0.058),   # откинулась, грудь крупнее в кадре
+# Грудь = ДВА отдельных пропа, по одному на каждую «округлость».
+# (cx, cy, rx, ry) — контур груди в долях кадра спрайта: (левая, правая).
+BUST = {
+    'sg1': ((0.472, 0.378, 0.040, 0.034), (0.556, 0.375, 0.042, 0.034)),  # кофта
+    'sg2': ((0.424, 0.370, 0.048, 0.045), (0.523, 0.368, 0.045, 0.045)),
+    'sg3': ((0.442, 0.345, 0.063, 0.045), (0.586, 0.340, 0.065, 0.047)),  # топ
+    'sg4': ((0.429, 0.404, 0.076, 0.074), (0.597, 0.397, 0.072, 0.075)),  # откинулась
 }
+SIDES = ('l', 'r')
+CORE_K = 0.74    # непрозрачное ядро (доля контура груди)
+HULL_K = 0.92    # внешняя граница растушёвки
+HOLE_K = 0.68    # окно в базовом кадре — строго внутри ядра
 
 
 def shrink(src, dest, size):
@@ -31,31 +37,60 @@ def shrink(src, dest, size):
     print(f'{os.path.basename(dest)} {size} {os.path.getsize(dest)/1e6:.2f} MB')
 
 
-def punch_hole(tag):
-    """Вырезаем в базовом кадре окно под грудью.
+def _ellipse_mask(size, cx, cy, rx, ry, k):
+    m = Image.new('L', size, 0)
+    ImageDraw.Draw(m).ellipse([cx - rx*k, cy - ry*k, cx + rx*k, cy + ry*k], fill=255)
+    return m
 
-    Без этого патч, уезжая, оставляет под собой старые пиксели — виден
-    гостинг (двойной контур). Окно меньше патча (82 % эллипса), поэтому
-    край окна всегда закрыт непрозрачной серединой патча.
+
+def _bust_mask(size, cx, cy, rx, ry):
+    """Ядро + мягкая растушёвка наружу.
+
+    Ядро непрозрачное — иначе край пропа полупрозрачный и сквозь него
+    просвечивает окно в базовом кадре. Растушёвка гаснет у контура груди,
+    поэтому нарисованный контур остаётся статичным: проп двигает только
+    «мясо» внутри силуэта, и двойного контура не возникает.
     """
-    cx, cy, rx, ry = MASK[tag]
-    for name in (f'art_day1_{tag}.webp', f'art_day1_{tag}_sm.webp'):
-        path = os.path.join(A, name)
-        im = Image.open(path).convert('RGBA')
-        W, H = im.size
-        m = Image.new('L', (W, H), 0)
-        k = 0.58
-        box = [int((cx-rx*k)*W), int((cy-ry*k)*H), int((cx+rx*k)*W), int((cy+ry*k)*H)]
-        ImageDraw.Draw(m).ellipse(box, fill=255)
-        m = m.filter(ImageFilter.GaussianBlur(max(2, int(min(rx*k*W, ry*k*H)*0.06))))
-        arr = np.array(im)
-        arr[..., 3] = (arr[..., 3].astype(np.float32) * (1 - np.array(m).astype(np.float32)/255)).astype('uint8')
-        Image.fromarray(arr, 'RGBA').save(path, 'WEBP', quality=90 if 'sm' not in name else 86,
-                                          alpha_quality=100, method=6)
-        print(f'окно: {name} {W}x{H} {os.path.getsize(path)/1e6:.2f} MB')
+    hull = _ellipse_mask(size, cx, cy, rx, ry, HULL_K)
+    hull = hull.filter(ImageFilter.GaussianBlur(max(2, int(min(rx, ry) * 0.085))))
+    core = _ellipse_mask(size, cx, cy, rx, ry, CORE_K)
+    return Image.fromarray(np.maximum(np.array(hull), np.array(core)))
+
+
+def _hole_mask(size, cx, cy, rx, ry):
+    m = _ellipse_mask(size, cx, cy, rx, ry, HOLE_K)
+    return m.filter(ImageFilter.GaussianBlur(max(2, int(min(rx, ry) * 0.05))))
+
+
+def _punch(path, tag, quality=90):
+    im = Image.open(path).convert('RGBA')
+    W, H = im.size
+    hole = Image.new('L', (W, H), 0)
+    for (cx, cy, rx, ry) in BUST[tag]:
+        h = _hole_mask((W, H), cx * W, cy * H, rx * W, ry * H)
+        hole = Image.fromarray(np.maximum(np.array(hole), np.array(h)))
+    arr = np.array(im)
+    arr[..., 3] = (arr[..., 3].astype(np.float32) * (1 - np.array(hole).astype(np.float32) / 255)).astype('uint8')
+    Image.fromarray(arr, 'RGBA').save(path, 'WEBP', quality=quality, alpha_quality=100, method=6)
+    print(f'окно: {os.path.basename(path)} {W}x{H} {os.path.getsize(path)/1e6:.2f} MB')
+
+
+def punch_hole(tag):
+    """Окно под каждой грудью в базовом кадре и в кадрах эмоций.
+
+    Без него проп, уезжая, оставляет под собой старые пиксели — гостинг.
+    """
+    _punch(os.path.join(A, f'art_day1_{tag}.webp'), tag, 90)
+    _punch(os.path.join(A, f'art_day1_{tag}_sm.webp'), tag, 86)
+    for mood in ('blink', 'shy'):
+        for suffix in ('', '_lg'):
+            p = os.path.join(A, f'art_emo_{tag}_{mood}{suffix}.webp')
+            if os.path.exists(p):
+                _punch(p, tag, 88)
 
 
 def chest_patch(tag):
+    """Два маленьких пропа: левая и правая грудь (общий кроп, разная альфа)."""
     im = Image.open(os.path.join(A, f'art_day1_{tag}.webp')).convert('RGBA')
     W, H = im.size
     x0, y0, x1, y1 = CHEST_BOX
@@ -64,32 +99,24 @@ def chest_patch(tag):
     cw, ch = crop.size
     k = CHEST_W / cw
     crop = crop.resize((CHEST_W, max(1, round(ch*k))), Image.LANCZOS)
-
-    cx, cy, rx, ry = MASK[tag]
     mw, mh = CHEST_W, crop.height
-    mx = (cx - x0) / (x1 - x0) * mw
-    my = (cy - y0) / (y1 - y0) * mh
-    mrx = rx / (x1 - x0) * mw
-    mry = ry / (y1 - y0) * mh
 
-    # жёсткое ядро + растушёвка только по внешнему кольцу:
-    # иначе у края патч полупрозрачный и под ним просвечивает «окно»
-    mask = Image.new('L', (mw, mh), 0)
-    ImageDraw.Draw(mask).ellipse([mx-mrx, my-mry, mx+mrx, my+mry], fill=255)
-    soft = mask.filter(ImageFilter.GaussianBlur(max(2, int(min(mrx, mry)*0.24))))
-    core = Image.new('L', (mw, mh), 0)
-    ImageDraw.Draw(core).ellipse([mx-mrx*0.70, my-mry*0.86, mx+mrx*0.70, my+mry*0.86], fill=255)
-    mask = Image.fromarray(np.maximum(np.array(soft), np.array(core)))
-
-    arr = np.array(crop)
-    arr[..., 3] = (np.array(mask).astype(np.float32) * (arr[..., 3].astype(np.float32)/255)).astype('uint8')
-    out = os.path.join(A, f'chest_{tag}.webp')
-    Image.fromarray(arr, 'RGBA').save(out, 'WEBP', quality=92, alpha_quality=100, method=6)
-    print(f'chest_{tag}.webp {CHEST_W}x{crop.height} {os.path.getsize(out)/1e3:.0f} KB')
+    for side, (cx, cy, rx, ry) in zip(SIDES, BUST[tag]):
+        mx = (cx - x0) / (x1 - x0) * mw
+        my = (cy - y0) / (y1 - y0) * mh
+        mrx = rx / (x1 - x0) * mw
+        mry = ry / (y1 - y0) * mh
+        mask = _bust_mask((mw, mh), mx, my, mrx, mry)
+        arr = np.array(crop)
+        arr[..., 3] = (np.array(mask).astype(np.float32) * (arr[..., 3].astype(np.float32)/255)).astype('uint8')
+        out = os.path.join(A, f'chest_{tag}_{side}.webp')
+        Image.fromarray(arr, 'RGBA').save(out, 'WEBP', quality=92, alpha_quality=100, method=6)
+        print(f'chest_{tag}_{side}.webp {mw}x{mh} {os.path.getsize(out)/1e3:.0f} KB')
 
 
 if __name__ == '__main__':
     only_chest = '--chest' in sys.argv
+    only_sm = '--sm' in sys.argv
     if only_chest:
         for tag in ('sg1', 'sg2', 'sg3', 'sg4'):
             chest_patch(tag)
