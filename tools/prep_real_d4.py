@@ -11,12 +11,24 @@ import sys
 from PIL import Image
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import prep_canon as PC  # noqa: E402
 import prep_hd as HD  # noqa: E402
 import prep_real as PR  # noqa: E402
 
 RAW = PR.RAW
 OUT = PR.OUT
 POSES = ('sg1', 'sg2', 'sg3', 'sg4')
+
+
+CS = None
+
+
+def canon():
+    global CS
+    if CS is None:
+        CS = PC.CanonStyle()
+        print(CS.report())
+    return CS
 
 
 def main(argv):
@@ -30,6 +42,7 @@ def main(argv):
         print(f'{tag}:')
         base = Image.open(src).convert('RGB')
         art = HD.sharpen(HD.art_from(base, HD.FACTOR))
+        art = canon().apply(art, soft=0.85)
         PR.save(art, os.path.join(OUT, f'art_real_day4_{tag}.webp'), master=True)
         PR.save(art, os.path.join(OUT, f'art_real_day4_{tag}_sm.webp'), master=False)
 

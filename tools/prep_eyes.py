@@ -55,7 +55,7 @@ BOX = {
     '4sg1': (0.360, 0.100, 0.720, 0.300),
     '4sg2': (0.170, 0.135, 0.450, 0.325),
     '4sg3': (0.380, 0.100, 0.660, 0.290),
-    '4sg4': (0.300, 0.070, 0.620, 0.300),
+    '4sg4': (0.315, 0.075, 0.605, 0.285),
 }
 # глаза в долях КРОПА: (x0,y0,x1,y1) — левый по картинке, правый по картинке
 EYES = {
@@ -74,7 +74,7 @@ EYES = {
     '4sg1': ((0.200, 0.395, 0.315, 0.485), (0.400, 0.355, 0.515, 0.445)),
     '4sg2': ((0.275, 0.525, 0.420, 0.625), (0.495, 0.505, 0.645, 0.605)),
     '4sg3': ((0.228, 0.443, 0.372, 0.560), (0.452, 0.388, 0.598, 0.505)),
-    '4sg4': ((0.430, 0.455, 0.560, 0.540), (0.640, 0.415, 0.770, 0.500)),
+    '4sg4': ((0.425, 0.480, 0.565, 0.575), (0.615, 0.420, 0.755, 0.515)),
 }
 MOODS = ('blink', 'shy')
 GEO = {}                 # key -> [left, top, width, height] в долях кадра
@@ -113,7 +113,7 @@ def _shift(ref, gen, b):
     return best
 
 
-def match_low(gen, ref, radius=14.0, limit=9.0):
+def match_low(gen, ref, radius=14.0, limit=45.0):
     """Низкочастотная подгонка яркости генерата под базовый кадр.
 
     Генератор иногда отдаёт лицо темнее (поза 2 дня 2 — заметно) — заплатка
@@ -334,10 +334,10 @@ def build(day, tag, mood, debug=False):
         # растушёвкой накрывал щёку и лоб. Тон генерата чуть иной, чем у арта, и
         # в кадре это читалось полупрозрачным серым прямоугольником, а лицо
         # «меняло цвет» на моргании.
-        rx, ry = (e[2] - e[0]) / 2 * 1.18, (e[3] - e[1]) / 2 * 1.30
+        rx, ry = (e[2] - e[0]) / 2 * 1.04, (e[3] - e[1]) / 2 * 1.14
         ds.ellipse((cx - rx, cy - ry, cx + rx, cy + ry), fill=255)
-    soft = soft.filter(ImageFilter.GaussianBlur(max(2.0, eh_hard * 0.35)))
-    alpha = Image.fromarray(np.maximum(np.array(hard), (np.array(soft) * 0.80).astype('uint8')), 'L')
+    soft = soft.filter(ImageFilter.GaussianBlur(max(2.0, eh_hard * 0.18)))
+    alpha = Image.fromarray(np.maximum(np.array(hard), (np.array(soft) * 0.92).astype('uint8')), 'L')
 
     # Гарантия «старого глаза не видно»: там, где в арте лежит тёмный зрачок,
     # ресницы или зелёная радужка, альфа — полная. Иначе у наклонённого глаза
@@ -411,11 +411,15 @@ def build(day, tag, mood, debug=False):
     gg = gen if gen.size == ref.size else gen.resize(ref.size, Image.LANCZOS)
     ra = np.asarray(ref.convert('RGB'), dtype=np.float32)
     ga = np.asarray(gg.convert('RGB'), dtype=np.float32)
+    # радиус низкочастотной подгонки: только цвет/свет, без формы века
     sig = max(2.5, min(ref.size) * 0.045)
     # Поправку ограничиваем: у сильных контрастов (кромка волос над глазом)
     # размытая разница уходила в десятки уровней и вычиталась из патча —
     # на полупрозрачном крае маски это читалось как ЧЁРНЫЕ ПЯТНЫШКИ на лице.
-    low = np.clip(cv2.GaussianBlur(ga - ra, (0, 0), sig), -12.0, 12.0)
+    # Предел поправки большой намеренно: база дня 4 после подгонки к канону
+    # стала заметно светлее генерата, и при клипе ±12 вокруг глаз оставался
+    # тёмный «синяк». Нам нужен ТОН арта, а деталь века — из генерата.
+    low = np.clip(cv2.GaussianBlur(ga - ra, (0, 0), sig), -46.0, 46.0)
     g2c = Image.fromarray(np.clip(ga - low, 0, 255).astype('uint8'), 'RGB')
     canvas_rgb = flat.copy()
     canvas_rgb.paste(g2c, (box[0] + dx, box[1] + dy))
@@ -447,7 +451,7 @@ def build(day, tag, mood, debug=False):
             ggb = gb2 if gb2.size == ref.size else gb2.resize(ref.size, Image.LANCZOS)
             rab = np.asarray(ref.convert('RGB'), dtype=np.float32)
             gbb = np.asarray(ggb.convert('RGB'), dtype=np.float32)
-            lowb = np.clip(cv2.GaussianBlur(gbb - rab, (0, 0), sig), -12.0, 12.0)
+            lowb = np.clip(cv2.GaussianBlur(gbb - rab, (0, 0), sig), -46.0, 46.0)
             gbc = Image.fromarray(np.clip(gbb - lowb, 0, 255).astype('uint8'), 'RGB')
             canvas_b = flat.copy()
             canvas_b.paste(gbc, (box[0] + dxb, box[1] + dyb))
