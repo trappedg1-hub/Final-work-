@@ -23,7 +23,7 @@ BUST = {
     'sg1': ((0.494, 0.359, 0.030, 0.034), (0.589, 0.343, 0.066, 0.041)),  # кофта: правая видна целиком, левая за рукой
     'sg2': ((0.451, 0.354, 0.060, 0.054), (0.579, 0.348, 0.066, 0.051)),
     'sg3': ((0.442, 0.345, 0.063, 0.045), (0.586, 0.340, 0.065, 0.047)),  # топ
-    'sg4': ((0.429, 0.404, 0.076, 0.074), (0.597, 0.397, 0.072, 0.075)),  # откинулась
+    'sg4': ((0.426, 0.430, 0.072, 0.038), (0.596, 0.424, 0.070, 0.040)),  # откинулась: цепляем полотно ПОД кромкой майки
 }
 SIDES = ('l', 'r')
 CORE_K = 0.52    # непрозрачное ядро (доля контура груди)
@@ -104,16 +104,18 @@ def punch_hole(tag):
 
 
 def chest_patch(tag):
-    """Два маленьких пропа: левая и правая грудь (общий кроп, разная альфа)."""
-    im = Image.open(os.path.join(A, f'art_day1_{tag}.webp')).convert('RGBA')
+    """Два маленьких пропа: левая и правая грудь (общий кроп, разная альфа).
+
+    Кроп берём из той же версии кадра, что видит телефон (`_sm`, 1170), и БЕЗ
+    масштабирования: тогда пиксели пропа совпадают с базой один в один и по
+    кромке маски не проступает овал.
+    """
+    im = Image.open(os.path.join(A, f'art_day1_{tag}_sm.webp')).convert('RGBA')
     W, H = im.size
     x0, y0, x1, y1 = CHEST_BOX
     box = (int(W*x0), int(H*y0), int(W*x1), int(H*y1))
     crop = im.crop(box)
-    cw, ch = crop.size
-    k = CHEST_W / cw
-    crop = crop.resize((CHEST_W, max(1, round(ch*k))), Image.LANCZOS)
-    mw, mh = CHEST_W, crop.height
+    mw, mh = crop.size
 
     for side, (cx, cy, rx, ry) in zip(SIDES, BUST[tag]):
         mx = (cx - x0) / (x1 - x0) * mw
@@ -123,6 +125,10 @@ def chest_patch(tag):
         mask = _bust_mask((mw, mh), mx, my, mrx, mry)
         arr = np.array(crop)
         arr[..., 3] = (np.array(mask).astype(np.float32) * (arr[..., 3].astype(np.float32)/255)).astype('uint8')
+        # заливка цвета под прозрачность: иначе при уменьшении пропа (телефон,
+        # 720 -> ~540 px) край растушёвки темнеет и по контуру маски видна кайма
+        rgb = Image.fromarray(arr[..., :3].astype('uint8')).filter(ImageFilter.GaussianBlur(9))
+        arr[..., :3] = np.where((arr[..., 3] == 0)[..., None], np.array(rgb), arr[..., :3])
         out = os.path.join(A, f'chest_{tag}_{side}.webp')
         Image.fromarray(arr, 'RGBA').save(out, 'WEBP', quality=92, alpha_quality=100, method=6)
         print(f'chest_{tag}_{side}.webp {mw}x{mh} {os.path.getsize(out)/1e3:.0f} KB')
