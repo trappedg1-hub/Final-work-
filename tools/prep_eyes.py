@@ -23,11 +23,11 @@ from PIL import Image, ImageDraw, ImageFilter
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 RAW = os.path.join(ROOT, 'images', 'raw_real')
 OUT = os.path.join(ROOT, 'assets', 'real')
-MASTER = (2340, 3120)
+MASTER = (1170, 1560)   # ровно разрешение арта, которое отдаётся телефону (_sm)
 
 SRC = {
-    '1': os.path.join(ROOT, 'assets', 'real', 'art_real_day1_{tag}.webp'),
-    '2': os.path.join(ROOT, 'assets', 'real', 'art_real_day2_{tag}.webp'),
+    '1': os.path.join(ROOT, 'assets', 'real', 'art_real_day1_{tag}_sm.webp'),
+    '2': os.path.join(ROOT, 'assets', 'real', 'art_real_day2_{tag}_sm.webp'),
 }
 FACECROP = {'1': '_d1f2_{mood}_{tag}.png', '2': '_d2f2_{mood}_{tag}.png'}
 
@@ -54,6 +54,7 @@ EYES = {
     '2sg4': ((0.175, 0.555, 0.295, 0.645), (0.325, 0.455, 0.465, 0.545)),
 }
 MOODS = ('blink', 'shy')
+GEO = {}                 # key -> [left, top, width, height] в долях кадра
 BAND_FEATHER = 0.22   # растушёвка полосы глаз
 EYE_GROW = 1.22        # маска глаза: сам глаз + уголки, не залезая на бровь
 EYE_FEATHER = 0.40
@@ -234,10 +235,7 @@ def build(day, tag, mood, debug=False):
     m = Image.new('L', (tw, th), 0)
     ImageDraw.Draw(m).ellipse(B, fill=255)
     m = m.filter(ImageFilter.GaussianBlur(max(3, int(min(B[2] - B[0], B[3] - B[1]) * BAND_FEATHER))))
-    layer = Image.new('RGBA', (tw, th), (0, 0, 0, 0))
-    layer.paste(g2, (dx, dy))
-    layer.putalpha(m)
-    canvas.alpha_composite(layer)
+    alpha = m
 
     if mood == 'shy':
         # щёки: кожа ровная — сюда можно класть содержимое генерата широко и мягко
@@ -248,13 +246,31 @@ def build(day, tag, mood, debug=False):
             cy = e[3] + eh * 0.55
             rx, ry = ew * 0.52 * CHEEK_GROW, eh * 0.62 * CHEEK_GROW
             m = _ell((tw, th), cx, cy, rx, ry, min(rx, ry) * CHEEK_FEATHER)
-            layer = Image.new('RGBA', (tw, th), (0, 0, 0, 0))
-            layer.paste(g2, (dx, dy))
-            layer.putalpha(m)
-            canvas.alpha_composite(layer)
+            alpha = Image.fromarray(np.maximum(np.array(alpha), np.array(m)), 'L')
 
-    full = Image.new('RGBA', MASTER, (0, 0, 0, 0))
-    full.paste(canvas, (box[0], box[1]), canvas)
+    # ВАЖНО: RGB остаются «прямыми» (не умноженными на альфу). Раньше слои
+    # склеивались через alpha_composite, PIL отдавал премноженный цвет — и
+    # полупрозрачный край маски ложился на лицо серой тенью («квадрат»).
+    rgb = ref.copy()
+    rgb.paste(g2, (dx, dy))
+
+    # Кадр целиком отдавать вёрстке нельзя: элемент размером с кадр при
+    # каждом моргании подсовывает телефону картинку на весь экран, а в
+    # прозрачной зоне у неё чёрный цвет — при уменьшении это и давало серый
+    # прямоугольник и тёмное лицо. Отдаём только область глаз: она маленькая,
+    # в прозрачных пикселях лежит ЦВЕТ АРТА, а не чёрный.
+    gx0 = (box[0] + B[0] - (B[2] - B[0]) * 0.22) / W
+    gy0 = (box[1] + B[1] - (B[3] - B[1]) * 0.30) / H
+    gx1 = (box[0] + B[2] + (B[2] - B[0]) * 0.22) / W
+    gy1 = (box[1] + B[3] + (B[3] - B[1]) * 0.30) / H
+    gx0, gy0 = max(0.0, gx0), max(0.0, gy0)
+    gx1, gy1 = min(1.0, gx1), min(1.0, gy1)
+    cbox = (round(W * gx0), round(H * gy0), round(W * gx1), round(H * gy1))
+    full = flat.crop(cbox).convert('RGBA')
+    full_alpha = Image.new('L', full.size, 0)
+    full_alpha.paste(alpha, (box[0] - cbox[0], box[1] - cbox[1]))
+    full.putalpha(full_alpha)
+    GEO[key] = [round(gx0, 4), round(gy0, 4), round(gx1 - gx0, 4), round(gy1 - gy0, 4)]
     out = os.path.join(OUT, f'art_real_face_day{day}_{tag}_{mood}.webp')
     full.save(out, 'WEBP', quality=92, alpha_quality=100, method=6)
     print(f'  art_real_face_day{day}_{tag}_{mood}.webp  ' + ' '.join(log) +
@@ -285,7 +301,10 @@ def main():
         for tag in ('sg1', 'sg2', 'sg3', 'sg4'):
             for mood in MOODS:
                 build(day, tag, mood, debug)
-    print('готово')
+    import json
+    with open(os.path.join(OUT, 'emo_geo.json'), 'w', encoding='utf-8') as fh:
+        json.dump(GEO, fh, ensure_ascii=False, indent=1, sort_keys=True)
+    print('готово, геометрия в assets/real/emo_geo.json')
 
 
 if __name__ == '__main__':

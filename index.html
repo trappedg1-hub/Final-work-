@@ -979,6 +979,9 @@ main{
 /* кадры-эмоции ложатся ровно на базовый кадр (силуэт тот же, проверено по альфе) */
 .hero .art-emo{ z-index:2; opacity:0; transition:opacity .16s ease; }
 #artEmoBlink{ z-index:3; }
+/* слой эмоции — не весь кадр, а только область глаз: объект вписывается
+   ровно в свой бокс, поэтому совпадает с артом пиксель в пиксель */
+.hero .art-emo.crop{ object-fit:fill; object-position:0 0; }
 /* две груди — два маятника: правой даём свою фазу и свой период дыхания */
 #artChestR i{ animation-delay:-.09s; }
 .hero .art-chest.breathe #artChestR i{ animation-delay:-1.2s; }
@@ -1891,10 +1894,39 @@ function chestHit(){
 }
 
 /* ---- эмоции: кадры-варианты той же позы (моргание, смущённая улыбка) ---- */
+/* бокс слоя эмоции в долях кадра (генерит tools/prep_eyes.py) */
+const EMO_GEO_REAL = {
+  '1sg1': [0.4214, 0.0974, 0.1523, 0.1080],
+  '1sg2': [0.3899, 0.0792, 0.1470, 0.1210],
+  '1sg3': [0.4012, 0.0704, 0.1376, 0.1392],
+  '1sg4': [0.3996, 0.0777, 0.1573, 0.1314],
+  '2sg1': [0.3888, 0.0681, 0.1584, 0.1330],
+  '2sg2': [0.3966, 0.0955, 0.1641, 0.1690],
+  '2sg3': [0.4273, 0.0773, 0.1876, 0.1108],
+  '2sg4': [0.4068, 0.0757, 0.1606, 0.1404]
+};
+
 const EMO = { tag: null, shy: false, blinkTimer: 0, shyTimer: 0, ok: { shy: false, blink: false } };
 
 function emoEls(){
   return [document.getElementById('artEmoShy'), document.getElementById('artEmoBlink')];
+}
+
+/* эмоция грузится маленьким куском кадра — ставим её точно поверх глаз */
+function emoCrop(el, box){
+  if (!box){
+    el.classList.remove('crop');
+    el.style.left = el.style.top = el.style.width = el.style.height = '';
+    el.style.right = el.style.bottom = '';
+    return;
+  }
+  el.classList.add('crop');
+  el.style.left = (box[0] * 100).toFixed(3) + '%';
+  el.style.top = (box[1] * 100).toFixed(3) + '%';
+  el.style.width = (box[2] * 100).toFixed(3) + '%';
+  el.style.height = (box[3] * 100).toFixed(3) + '%';
+  el.style.right = 'auto';
+  el.style.bottom = 'auto';
 }
 
 function emoSet(tag, day){
@@ -1920,6 +1952,7 @@ function emoSet(tag, day){
        значок битой картинки — на тёмной сцене это «?» посреди девушки */
     el.onload = () => { EMO.ok[mood] = true; };
     el.onerror = () => { EMO.ok[mood] = false; el.classList.remove('on'); };
+    emoCrop(el, ART_REAL ? EMO_GEO_REAL[day + tag] : null);
     el.src = emoPath(day, tag, mood);
   });
   emoSchedule();
