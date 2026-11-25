@@ -247,8 +247,11 @@ def build(day, tag, mood, debug=False):
     dh = ImageDraw.Draw(hard)
     for b in EYES[key]:
         e = (b[0] * tw, b[1] * th, b[2] * tw, b[3] * th)
-        ex, ey = (e[2] - e[0]) * 0.06, (e[3] - e[1]) * 0.06
-        dh.rectangle([e[0] - ex, e[1] - ey, e[2] + ex, e[3] + ey], fill=255)
+        ew_, eh_ = e[2] - e[0], e[3] - e[1]
+        # Низ расширяем: под глазом остаётся тёмная линия нижних ресниц, и в
+        # растушёвке она просвечивала чёрными точками на закрытом веке.
+        dh.rectangle([e[0] - ew_ * 0.22, e[1] - eh_ * 0.06,
+                      e[2] + ew_ * 0.22, e[3] + eh_ * 0.45], fill=255)
     # кромку ядра растушёвываем сильнее: при 2 px на коже была видна прямая
     # граница прямоугольника («стеклянная плашка» над глазом)
     hard = hard.filter(ImageFilter.GaussianBlur(5))
@@ -276,8 +279,9 @@ def build(day, tag, mood, debug=False):
     box_only = np.zeros((th, tw), dtype='uint8')
     for b in EYES[key]:
         e = (b[0] * tw, b[1] * th, b[2] * tw, b[3] * th)
-        ex, ey = (e[2] - e[0]) * 0.20, (e[3] - e[1]) * 0.20
-        cv2.rectangle(box_only, (int(e[0] - ex), int(e[1] - ey)), (int(e[2] + ex), int(e[3] + ey)), 255, -1)
+        ew_, eh_ = e[2] - e[0], e[3] - e[1]
+        cv2.rectangle(box_only, (int(e[0] - ew_ * 0.30), int(e[1] - eh_ * 0.10)),
+                      (int(e[2] + ew_ * 0.30), int(e[3] + eh_ * 0.50)), 255, -1)
     eye_px = cv2.bitwise_and(eye_px, box_only)
     eye_px = cv2.dilate(eye_px, np.ones((5, 5), 'uint8'))
     eye_px = cv2.GaussianBlur(eye_px, (0, 0), 1.6)
@@ -332,7 +336,10 @@ def build(day, tag, mood, debug=False):
     ra = np.asarray(ref.convert('RGB'), dtype=np.float32)
     ga = np.asarray(gg.convert('RGB'), dtype=np.float32)
     sig = max(2.5, min(ref.size) * 0.045)
-    low = cv2.GaussianBlur(ga - ra, (0, 0), sig)
+    # Поправку ограничиваем: у сильных контрастов (кромка волос над глазом)
+    # размытая разница уходила в десятки уровней и вычиталась из патча —
+    # на полупрозрачном крае маски это читалось как ЧЁРНЫЕ ПЯТНЫШКИ на лице.
+    low = np.clip(cv2.GaussianBlur(ga - ra, (0, 0), sig), -12.0, 12.0)
     g2c = Image.fromarray(np.clip(ga - low, 0, 255).astype('uint8'), 'RGB')
     canvas_rgb = flat.copy()
     canvas_rgb.paste(g2c, (box[0] + dx, box[1] + dy))
@@ -357,7 +364,7 @@ def build(day, tag, mood, debug=False):
             ggb = gb2 if gb2.size == ref.size else gb2.resize(ref.size, Image.LANCZOS)
             rab = np.asarray(ref.convert('RGB'), dtype=np.float32)
             gbb = np.asarray(ggb.convert('RGB'), dtype=np.float32)
-            lowb = cv2.GaussianBlur(gbb - rab, (0, 0), sig)
+            lowb = np.clip(cv2.GaussianBlur(gbb - rab, (0, 0), sig), -12.0, 12.0)
             gbc = Image.fromarray(np.clip(gbb - lowb, 0, 255).astype('uint8'), 'RGB')
             canvas_b = flat.copy()
             canvas_b.paste(gbc, (box[0] + dxb, box[1] + dyb))
@@ -400,6 +407,31 @@ def build(day, tag, mood, debug=False):
     win = win.filter(ImageFilter.GaussianBlur(max(2, int(min(full.size) * 0.07))))
     full_alpha = ImageChops.multiply(full_alpha, win)
     full.putalpha(full_alpha)
+
+    # На ПОЛУПРОЗРАЧНОЙ кромке не должно быть структуры (ресниц, брови): там
+    # содержимое генерата смещено на пару пикселей и читается как чёрные
+    # пятнышки на коже. Поэтому на краю патч не темнее арта больше чем на 28
+    # уровней — остаются только плавные переходы (румянец, тени).
+    arr_ = np.asarray(full).astype(np.float32)
+    art_c = np.asarray(flat.crop(cbox).convert('RGB'), dtype=np.float32)
+    al_ = arr_[..., 3:4] / 255.0
+    low_mask = al_ < 0.86
+    arr_[..., :3] = np.where(low_mask, np.maximum(arr_[..., :3], art_c - 28.0), arr_[..., :3])
+    full = Image.fromarray(np.clip(arr_, 0, 255).astype('uint8'), 'RGBA')
+
+    # Точечная чистка: одиночные тёмные точки (след смещённой ресницы/тени)
+    # заменяем медианой окружения. Линии (само веко) медиана сохраняет,
+    # поэтому структура не страдает — исчезают именно «пятнышки».
+    arr2_ = np.asarray(full).astype(np.float32)
+    rgb_im = full.convert('RGB')
+    med_ = np.asarray(rgb_im.filter(ImageFilter.MedianFilter(5)), dtype=np.float32)
+    lum_ = arr2_[..., :3].mean(axis=2)
+    lmed_ = med_.mean(axis=2)
+    artl_ = art_c.mean(axis=2)
+    spot_ = (lum_ < artl_ - 22.0) & (lmed_ > lum_ + 10.0) & (arr2_[..., 3] > 90)
+    if spot_.any():
+        arr2_[..., :3] = np.where(spot_[..., None], med_, arr2_[..., :3])
+        full = Image.fromarray(np.clip(arr2_, 0, 255).astype('uint8'), 'RGBA')
     GEO[key] = [round(gx0, 4), round(gy0, 4), round(gx1 - gx0, 4), round(gy1 - gy0, 4)]
     out = os.path.join(OUT, f'art_real_face_day{day}_{tag}_{mood}.webp')
     full.save(out, 'WEBP', quality=92, alpha_quality=100, method=6)
