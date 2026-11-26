@@ -172,6 +172,21 @@ background, flat anime shading, hard black outlines, plastic skin without
 highlights.
 ```
 
+## Регистр формулировок для генератора (день 5)
+
+Один и тот же кадр проходит или не проходит фильтр генератора в зависимости от
+регистра описания одежды, а не от откровенности позы. Проверено на дне 5:
+
+- **проходит стабильно** — «регистр каталожной съёмки»: первая строка
+  `Editorial fashion shoot in the style of a realistic digital painting`,
+  дальше отдельные короткие блоки `POSE`, `CLOTHING`, `FOOTWEAR`.
+- **отклоняется** — глаголы раздевания и «плотной посадки»: «easing the top off
+  her shoulder», «unbuttoned and slipping», «straps biting into the skin»,
+  «one size too small», «hip crease», «cups strained».
+- **нейтральные замены**: «worn open at the front», «sits loose at her hips»,
+  «the high-cut bottom sitting at the hip», «she is fully covered».
+- **лимит** — 10 запросов на ход, отклонённые тоже считаются.
+
 ## Чек-лист приёмки кадра
 
 - [ ] фигура целиком: шляпа не касается края, каблуки не срезаны;
