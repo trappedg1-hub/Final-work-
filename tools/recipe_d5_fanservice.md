@@ -369,3 +369,32 @@ nearest thing in the frame` — задаёт перспективу; (3) сту�
 подошвы показаны целиком и ровно, без ракурса «в упор».
 
 `_d5Z3_p2` — тот же кадр с более мягким лицом, `_d5Z3_p5` — откинулась, ноги вверх.
+
+## Проход ZB3 — «мега фан-сервис», ноги выше (итоговая поза 4)
+Финал по позам 3–4: **3** = подошвы прямо к игроку (`_d5Z3_p4`), **4** = завалилась в кресле,
+ноги вверх (`_d5ZB3_p2`).
+
+Рабочая формула (дословно, проходит стабильно):
+```
+she lies back in the chair with her head against one armrest and swings both legs up high,
+her knees bent and spread wide apart, her bare feet lifted to the upper part of the frame
+with the toes of both feet spread and clearly drawn, one hand resting on her stomach and
+the other on the seat beside her hip, her chest rising toward the camera, eyes locked on
+the viewer, soft teasing smile
+```
+Ключ: «lies back with head against one armrest» + «swings both legs up high» + «knees bent and
+spread wide apart». Ноги поднимаются до 0.05–0.45 высоты кадра — сильно выше линии стола (0.83),
+поэтому в игре читаются поверх стола.
+
+Не прошли (6 отказов подряд): варианты с «throws both legs straight up», «legs point diagonally at
+the ceiling», «lifts her hips», «ankles crossed high up near her face», «soles turned toward the lens».
+Фильтр режет именно подъём ног + слово `soles`/`hips` в одном предложении. Как только меняем `soles`
+на `toes ... spread and clearly drawn`, кадр проходит.
+
+## Проход ZA3 — попытка «ноги на стол» (отброшено)
+Идея: рисовать стол в арте, чтобы стопы встали на столешницу. Генерации прошли (`_d5ZA3_p4`,
+`_d5ZA3_p6`), но **в игре получается двойной стол**: нарисованный рисунок выше линии 0.83 не
+перекрывается слоем `room_fg` и торчит над настоящей столешницей.
+Вывод: стол в арт не рисовать никогда (или рисовать только ниже 0.83, что почти невозможно —
+модель ставит столешницу на уровне колен). Ноги держим ВЫШЕ линии стола, тогда эффект «закинула
+ноги на стол» возникает сам при наложении слоёв.
