@@ -348,3 +348,24 @@ Y3: `_d5Y3_p2` — ноги разведены, ступни в камеру (п
 `p4` — ромб, колени в стороны; `p7` — ноги в V, ступни у кромки стола.
 Формула босой позы: `barefoot, no shoes, no stockings; five toes on each foot, clearly separated`
 + в NEGATIVE `shoes`. Без этой пары модель дорисовывает туфли на автомате.
+
+## Проход Z3 — «ступни прямо к игроку» (3 из 5)
+Поза 4 переделана: не ступни на кромке стола, а подошвы прямо в игрока.
+Формула (работает, `_d5Z3_p4`):
+
+```
+she sits back in the chair with both legs stretched toward the player, her bare feet raised to the
+level of her knees and pointed at the lens, the two feet side by side with the toes spread wide,
+her hands on the armrests, her shoulders eased back and her chest lifted toward the camera,
+head tilted, sly smile
++ The camera is low, so the legs read long and the feet are the nearest thing in the frame.
+```
+
+Работают три вещи: (1) камера на уровне сиденья — иначе ступни мелкие; (2) `the feet are the
+nearest thing in the frame` — задаёт перспективу; (3) ступни на уровне колен, а не на полу.
+
+Отказы Z3: подошвы «foreshortened» с расписанной подошвой (`p1`) и вариант с руками на сиденье
+позади (`p3`) — падают на формулировке про подошвы крупным планом. Проходит вариант, где
+подошвы показаны целиком и ровно, без ракурса «в упор».
+
+`_d5Z3_p2` — тот же кадр с более мягким лицом, `_d5Z3_p5` — откинулась, ноги вверх.
