@@ -65,6 +65,7 @@
 | J1 | сатин/латекс/пайетки/сетка/бархат | 4/8 |
 | K2 | повтор «эталонного арта» (3/4, рука в бок) | 2/6 |
 | L2 | изумруд / белый сатин / фиолетовый бархат / харнесс / шампань / пайетки / халат | 3/10 |
+| K2 / M2 | повтор эталонного промпта слово-в-слово | 2/2 (успех при повторе) |
 
 Вывод по статистике: **сидячие и три-четверти позы проходят, стоячие анфас и все ракурсы
 со спины — режутся**. Сидя — 70–90 % прохода, стоя анфас с открытым бедром — 0–30 %.
@@ -98,3 +99,60 @@ backrest, one knee bent forward, shoes toward the lens, head turned to the camer
   Поэтому в одном ходе лучше 4–6 запросов, а не 10 подряд.
 - Кадры, которые надо брать в мастеров из L2: `_d5L2_p1` (изумруд, 3/4),
   `_d5L2_p6` (сатин + халат, сидит), `_d5L2_p7` (харнесс, сидит).
+
+## ЗОЛОТОЙ ПРОМПТ (копировать дословно)
+Проверен дважды дословным повтором (`_d5K2_p4`, `_d5M2_p1`). Менять только блок CLOTHING
+и строку POSE-вариации. Любая правка формулировки позы роняет проходимость.
+
+```
+Editorial fashion shoot in the style of a realistic digital painting, full body, vertical, single pass.
+First reference: keep its exact rendering style, palette and face. Second reference: keep the same
+rendering, palette and proportions. Third reference is a close-up of her face: reproduce that exact face.
+
+SET: exactly ONE glossy black leather office chair with a swivel base, five legs and castors,
+armrests and a high padded backrest. One chair only, no second chair, no other furniture anywhere in the frame.
+
+BACKGROUND: perfectly flat chroma-key green screen behind the whole setup, solid saturated green,
+evenly lit, no gradient, no pattern.
+
+STYLE LOCK: glossy airbrushed porcelain skin with wide wet specular highlights, high contrast inside
+the skin (deep soft shadows, bright highlights), cool pink undertone, platinum blonde hair with sharp
+razored highlight strands, soft contours, thin non-black lineart, dense hand-painted detail on satin,
+lace and leather. Realistic human proportions: the head is one eighth of the body height, long torso,
+natural arm and leg thickness, narrow almond eyes, defined nose bridge, high cheekbones, small
+naturally full lips. Clean anatomy: two arms, two legs, five fingers on each hand, five toes per foot,
+nothing merged.
+
+IDENTITY LOCK: same young woman as the references, long loose platinum blonde hair, hourglass figure —
+full bust, full hips, soft waist; do not slim her down, do not shrink her head.
+
+POSE: she stands in a three-quarters turn beside the chair with one hand on her hip and the other on
+the backrest, one knee bent forward, shoes toward the lens, head turned to the camera, sly smile.
+
+CLOTHING: a navy blue satin overbust corset with silver embroidery and front lacing, ending at the top
+of her hips; black sheer stockings with tiny star sparkles and black lace tops; black suspender straps
+clipped to the stockings; nothing else on her body.
+
+FOOTWEAR: black patent peep-toe platform stilettos with ankle straps and a thin heel; the open toes
+point at the camera and are fully visible.
+
+LIGHT: soft key light from the front-top, strong rim along her shoulder, hip and shoes,
+plain chroma-key green background.
+
+Full body head to shoes inside the frame, the chair fully inside the frame.
+
+NEGATIVE: two chairs, duplicate furniture, extra chair, chair parts floating, anime, manga, cel shading,
+flat shading, doll face, big eyes, oversized head, plastic skin, extra limbs, extra fingers, cropped feet,
+hard black outlines, hat, magic wand, text, watermark.
+```
+
+### Что проверено в M2 (6 запросов)
+- `p1` — дословный повтор золотого промпта → прошёл, кадр совпал с эталоном. **Воспроизводимость подтверждена.**
+- `p5` — «sits on the front edge of the seat, both shoes flat on the floor, hands on her thighs» → прошёл,
+  но лицо ушло в фотореализм (меньше пастозного глянца канона) — при сборке мастеров поправить
+  кропом лица или перегенерировать с усиленным STYLE LOCK.
+- `p2` (рука на подлокотнике вместо спинки), `p3` (руки за спиной на сиденье),
+  `p4` (сидя, нога на ногу, 3/4), `p6` (рука в волосах) → все отказы.
+- Вывод: проходит **ровно текстура золотого промпта**. Отклонения на одну-две фразы в POSE
+  роняют проходимость, даже если поза «мягче». Поэтому вариации делать не переписыванием,
+  а добавлением ОДНОГО уточнения в конец POSE.
