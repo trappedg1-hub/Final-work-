@@ -60,3 +60,130 @@
 - подтон теней: холодный розово-лиловый, не оранжевый
 - волосы: `#D7A58B` в базе, блик почти белый
 - худи: `#C9C9CB`, шорты: `#1C1C1E`, носки: `#F2F2F2`
+
+---
+
+# Эталон B — «стоит у кресла» (поза 3 дня 4)
+
+Этот кадр признан лучшим из всех генераций проекта и объявлен эталоном по всем
+параметрам: плотность деталей, глянец кожи, читаемость позы, посадка наряда,
+чистая альфа. Все следующие кадры (день 5 и любые перерисовки) делаются **этим
+же рецептом**, а не «как получится».
+
+Файлы:
+
+| что | где |
+|---|---|
+| эталон в проекте (2340×3120) | `tools/refs/canon2_ref_stand.webp` |
+| он же для замеров и превью | `tools/refs/canon2_ref_stand_sm.webp` |
+| сырая генерация (в git не идёт, `images/` в ignore) | `images/raw_real/_canon2_hero2_stand.png` |
+| мастер в наборе дня | `assets/real/art_real_day4_sg3.webp` |
+
+## Замеры (`tools/measure_ref.py`)
+
+Метрики считаются по непрозрачной фигуре, кадр приведён к ширине 520 px.
+Определения — в шапке скрипта: насыщенность и яркость в HSV, `края` — доля
+пикселей с |Laplacian| > 0.10, `блики` — доля кожи с V > 0.935.
+
+| параметр | эталон B | день 2 (sg1–sg4) | день 3 (sg1–sg4) |
+|---|---|---|---|
+| насыщенность | 0.205 | 0.223–0.265 | 0.145–0.163 |
+| яркость | 0.560 | 0.539–0.577 | 0.485–0.553 |
+| Lstd | 0.296 | 0.316–0.333 | 0.287–0.302 |
+| p99 | 1.000 | 0.984–0.992 | 0.965–0.980 |
+| блики на коже | 38.7 % | 19.8–23.7 % | 13.6–19.9 % |
+| контраст кожи | 0.181 | 0.167–0.185 | 0.133–0.147 |
+| края | 0.504 | 0.115–0.152 | 0.100–0.298 |
+| кожа RGB | 0.811/0.667/0.589 | 0.749–0.792 / 0.579–0.642 / 0.490–0.571 | 0.793–0.818 / 0.630–0.661 / 0.552–0.579 |
+| высота фигуры | 94.4 % | 83–95 % | 76–95 % |
+
+Что из этого — и есть «эталонность»: бликов на коже почти вдвое больше, чем у
+дней 2–3 (38.7 % против 20 %), и краёв в 2–4 раза больше (0.504 против
+0.10–0.15). Это читается как «дорогая покраска»: мокрый глянец на фарфоре и
+плотная прорисовка ткани, кружева и шнуровки. Тон при этом остаётся в
+каноническом коридоре (яркость 0.56, насыщенность 0.205).
+
+Обратная сторона: p99 = 1.000 — блики местами выбиты в белый. Это допустимо
+(звезда палочки и глянец), но следующий кадр уже стоит держать на 0.98–0.99.
+
+## Приёмы, которыми сделан кадр
+
+1. **Один проход.** Кадр не правится ни инпейнтом, ни варпом уровня генерата:
+   всё, что нужно, заказывается сразу. Правки — только цветокор и апскейл.
+2. **Полный рост в кадре.** Фигура занимает 94–95 % высоты, над шляпой 2–3 %
+   воздуха, ступни целиком внутри кадра (низ альфы на 0.98 высоты). Ничего не
+   срезано — это и даёт «снято со штатива», а не «вылезло за край».
+3. **Опора в кадре.** Кресло — не фон, а реквизит: кисть лежит на спинке,
+   пальцы чуть провисают. Рука получает вес, силуэт — вторую вертикаль.
+4. **Контрапост.** Вес на одной ноге, бедро уведено в сторону, колени вместе,
+   щиколотки перекрещены. Поза читается одной линией от плеча до каблука.
+5. **Свет на лице от реквизита.** Палочка со звездой у самых губ: розовое
+   свечение работает вторым источником и даёт блик на щеке и подбородке.
+6. **Наряд по канону, но с открытой линией.** Низкий корсет с чашками и
+   серебряной вышивкой, подвязки, шляпа со звёздами, чулки в звёздочку.
+   Открытая кожа — грудь над кромкой, бёдра между подвязками и чулками.
+7. **Стопы — отдельный пункт промпта.** «Open-toe stilettos», и обязательно
+   «stockings run continuously over her feet and toes, nylon visible through the
+   open toe»: без этой формулы генератор снимает нейлон с пальцев и они
+   выходят голыми, что ломает канон.
+8. **Два блока в промпте.** STYLE LOCK (глянец, фарфор, платина, мягкие
+   контуры) и IDENTITY LOCK (лицо, волосы, фигура — большая грудь, полные
+   бёдра, мягкая талия). Меняются только поза, наряд и ракурс.
+9. **Ровный тёмный фон.** Не хромакей: на зелёном по кромке волос остаётся
+   зелёный ореол, который потом видно на телефоне.
+10. **Пост — детерминированный.** `tools/prep_real_d4.py`: HD до 2340×3120 и
+    `grade()` в LAB (перцентили p5/p50/p95 → 22/140/232, `CHROMA_K=0.92`,
+    `WARM=(1.5,3.5)`). Никакого «подкрутил ползунки».
+
+## Промпт-скелет (восстанавливает этот кадр)
+
+```
+Full-body shot, vertical 3:4, single pass, semi-realistic 2.5D illustration.
+
+STYLE LOCK: glossy airbrushed porcelain skin with wide wet specular highlights,
+high contrast inside the skin (deep soft shadows, bright highlights), cool pink
+undertone, platinum blonde hair with sharp razored highlight strands, soft
+contours, thin non-black lineart, dense hand-painted detail on fabric and lace.
+
+IDENTITY LOCK: same young woman, same face as the reference, green eyes, long
+platinum blonde hair, hourglass figure — full bust, full hips, soft waist,
+do not slim her down.
+
+POSE: she stands in front of a black leather office chair, right hand resting on
+the chair back, weight on one hip, knees together, ankles crossed, left hand
+holding a pink glowing star wand close to her lips.
+
+WARDROBE: black witch hat with silver star ornaments, low-cut dark navy corset
+with silver embroidery and cups, garter straps, sheer stockings with small star
+pattern, open-toe stiletto heels — stockings run continuously over her feet and
+toes, nylon visible through the open toe.
+
+LIGHT: soft key light from front-top, gentle rim on hair and shoulders, plain
+dark background, figure fills 94–95% of the frame height, feet fully in frame.
+
+NEGATIVE: extra fingers, cut-off feet, bare toes in open-toe shoes, green
+background, flat anime shading, hard black outlines, plastic skin without
+highlights.
+```
+
+## Чек-лист приёмки кадра
+
+- [ ] фигура целиком: шляпа не касается края, каблуки не срезаны;
+- [ ] пальцы в чулках просвечивают в открытом носке;
+- [ ] глаза зелёные, лицо без «серых пятен», кожа глянцевая;
+- [ ] тон после `grade()`: L 114–130, S 38–69;
+- [ ] `measure_ref.py`: блики ≥ 25 %, края ≥ 0.30, яркость 0.50–0.58;
+- [ ] альфа чистая, без зелёного ореола и рваной кромки волос;
+- [ ] blink/shy генерируются от кропа головы этого же кадра.
+
+## Порядок работы
+
+```
+python3 tools/prep_real_d4.py sg3          # HD + grade
+python3 tools/measure_ref.py assets/real/art_real_day4_sg3_sm.webp
+python3 tools/prep_faces_crop_d4.py sg3    # кроп головы под мимику
+# blink/shy от кропа -> images/raw_real/_d4f2_{mood}_sg3.png
+python3 tools/prep_eyes.py --day 4         # слои глаз/щёк + emo_geo.json
+python3 tools/prep_real_d4_chest.py        # пропы груди
+node tools/build-static.mjs                # сборка index.html
+```
