@@ -36,6 +36,29 @@ JOBS = {
     'p2': '_d5P2_p2.png',      # сидит на краю кресла, топ распахнут
     'p3': '_d5P2_p3.png',      # лежит на боку, только бикини
     'p4': '_d5P2_p4.png',      # финал: стойка у кресла, только бикини
+    # проход «chair tease»: кресло как элемент фан-сервиса
+    'w1': '_d5W1_p1.png',
+    'w2': '_d5W1_p2.png',
+    'w3': '_d5W1_p3.png',
+    'w4': '_d5W1_p4.png',
+    'w5': '_d5W1_p5.png',
+    # проход «tease v»: бантики на белье, ракурсы со спины, playful
+    'v1': '_d5V1_p1.png',
+    'v2': '_d5V1_p2.png',
+    'v3': '_d5V1_p3.png',
+    'v4': '_d5V1_p4.png',
+    'v5': '_d5V1_p5.png',
+    # проход «tease»: ракурсы со спины, попочка, только бикини в 3-5
+    'u1': '_d5U1_p1.png',
+    'u2': '_d5U1_p2.png',
+    'u3': '_d5U1_p3.png',
+    'u4': '_d5U1_p4.png',
+    'u5': '_d5U1_p5.png',
+    # полный проход дня 5 в каноническом STYLE LOCK, костюм переделан
+    't1': '_d5T1_p1.png',
+    't2': '_d5T1_p2.png',
+    't3': '_d5T1_p3.png',
+    't4': '_d5T1_p4.png',
     # новый проход с каноническим STYLE LOCK (глянец, контраст внутри кожи)
     'r1': '_d5R1_p1.png',
     'r4': '_d5R1_p4.png',
@@ -160,6 +183,9 @@ def to_canvas(rgb, bg):
     return im
 
 
+MATCH = 1.0   # доля канон-матча; 0 — оставить родной тон генерации
+
+
 def build(tag, factor=HD.FACTOR):
     name = JOBS[tag]
     src = os.path.join(RAW, name)
@@ -174,7 +200,7 @@ def build(tag, factor=HD.FACTOR):
     art = big.convert('RGBA')
     art.putalpha(mask.resize(big.size, Image.LANCZOS))
     art = HD.sharpen(art)
-    rgb = canon_match(art.convert('RGB'), fig=mask)
+    rgb = canon_match(art.convert('RGB'), weight=MATCH, fig=mask)
     rgb = to_canvas(rgb, bg)
     os.makedirs(OUT, exist_ok=True)
     dest = os.path.join(OUT, f'd5hd_{tag}.webp')
@@ -184,8 +210,12 @@ def build(tag, factor=HD.FACTOR):
 
 
 def main(argv):
+    global MATCH
     factor = HD.FACTOR
     args = list(argv)
+    if '--no-match' in args:
+        MATCH = 0.0
+        args.remove('--no-match')
     if '--factor' in args:
         i = args.index('--factor')
         factor = float(args[i + 1])
