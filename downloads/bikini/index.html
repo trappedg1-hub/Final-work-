@@ -3,123 +3,126 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Канон 2 — розовое бикини, сидячие позы</title>
+<title>Канон 2 — розовое бикини · 4 позы</title>
 <style>
-  :root{ --bg:#121116; --panel:#1b1a21; --line:#2e2c37; --text:#efeaf5; --dim:#9a94a8; --pink:#ff5fa2; --hot:#ff2e7e; }
+  :root{ --bg:#101014; --panel:#1a1920; --line:#2e2c37; --text:#f0ecf6; --dim:#9a94a8; --pink:#ff5fa2; --hot:#ff2e7e; }
   *{box-sizing:border-box}
-  body{margin:0;background:var(--bg);color:var(--text);font:16px/1.5 ui-sans-serif,system-ui,"Segoe UI",Roboto,Arial,sans-serif}
-  header{padding:28px 24px 10px;max-width:1360px;margin:0 auto}
-  h1{margin:0 0 6px;font-size:24px}
-  h1 .accent{color:var(--pink)}
-  .sub{color:var(--dim);font-size:14px;max-width:860px}
-  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:20px;padding:22px 24px 40px;max-width:1360px;margin:0 auto}
-  .card{background:var(--panel);border:1px solid var(--line);border-radius:14px;overflow:hidden;display:flex;flex-direction:column;position:relative}
-  .card.hero{border-color:var(--hot);box-shadow:0 0 0 1px var(--hot), 0 10px 40px -18px var(--hot)}
-  .badge{position:absolute;top:10px;left:10px;background:var(--hot);color:#2a0413;font-weight:800;font-size:11.5px;letter-spacing:.6px;padding:4px 9px;border-radius:999px;z-index:2}
-  .thumb{background:#0e0e12;display:block;aspect-ratio:848/1264;overflow:hidden}
+  body{margin:0;background:var(--bg);color:var(--text);font:16px/1.55 ui-sans-serif,system-ui,"Segoe UI",Roboto,Arial,sans-serif}
+  .wrap{max-width:1180px;margin:0 auto;padding:26px 18px 70px}
+  h1{margin:0 0 6px;font-size:23px}
+  h1 b{color:var(--pink)}
+  .sub{color:var(--dim);font-size:14px;margin-bottom:18px}
+  .dlbar{display:flex;flex-wrap:wrap;gap:12px;align-items:center;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px 16px;margin-bottom:26px}
+  .dlbar .t{font-weight:600}
+  .zip{background:var(--hot);color:#fff;text-decoration:none;font-weight:800;padding:11px 16px;border-radius:9px;font-size:14px}
+  .zip:hover{filter:brightness(1.08)}
+  .row{display:grid;grid-template-columns:repeat(auto-fill,minmax(235px,1fr));gap:18px}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:13px;overflow:hidden;display:flex;flex-direction:column}
+  .card.hero{border-color:var(--hot);box-shadow:0 0 0 1px var(--hot)}
+  .thumb{display:block;aspect-ratio:848/1264;background:#0d0d11;overflow:hidden;position:relative}
   .thumb img{width:100%;height:100%;object-fit:cover;display:block}
-  .meta{padding:12px 14px 14px;display:flex;flex-direction:column;gap:9px}
-  .name{font-weight:600;font-size:15px}
-  .size{color:var(--dim);font-size:12.5px}
-  .btn{display:block;text-align:center;text-decoration:none;padding:10px 12px;border-radius:9px;background:var(--pink);color:#2a0a17;font-weight:800;font-size:14px}
-  .btn:hover{filter:brightness(1.08)}
-  .btn.hot{background:var(--hot);color:#fff}
-  .btn.ghost{background:transparent;border:1px solid var(--line);color:var(--text);font-weight:500}
-  h2{max-width:1360px;margin:10px auto -6px;padding:0 24px;font-size:15px;color:var(--dim);font-weight:600;letter-spacing:.4px;text-transform:uppercase}
-  footer{color:var(--dim);font-size:13px;padding:10px 24px 50px;max-width:1360px;margin:0 auto}
+  .pill{position:absolute;top:9px;left:9px;background:var(--hot);color:#fff;font-size:11px;font-weight:800;letter-spacing:.5px;padding:4px 9px;border-radius:999px}
+  .meta{padding:11px 12px 13px;display:flex;flex-direction:column;gap:8px}
+  .name{font-weight:600;font-size:14.5px}
+  .meta .size{color:var(--dim);font-size:12px}
+  a.btn{display:block;text-align:center;text-decoration:none;padding:10px;border-radius:8px;background:var(--pink);color:#2a0a17;font-weight:800;font-size:13.5px}
+  a.btn.ghost{background:transparent;border:1px solid var(--line);color:var(--text);font-weight:500}
+  a.btn:hover{filter:brightness(1.07)}
+  h2{font-size:14px;letter-spacing:.4px;text-transform:uppercase;color:var(--dim);margin:32px 0 12px}
+  .note{background:#17161d;border:1px solid var(--line);border-radius:11px;padding:13px 15px;color:var(--dim);font-size:13.5px;margin-top:26px}
   kbd{background:#26242e;border:1px solid var(--line);border-radius:5px;padding:1px 6px;font-size:12px}
 </style>
 </head>
 <body>
-<header>
-  <h1>Канон 2 — <span class="accent">розовое бикини</span>, сидячие позы</h1>
-  <div class="sub">Атласный розовый комплект на два размера меньше. Все позы — сидя в кресле, ножки в камеру, открытые пальчики видно.
-  Зелёный хромакей, PNG 848×1264, фон чистый — вырезается под игру без потерь.</div>
-</header>
+<div class="wrap">
+  <h1>Канон 2 — <b>розовое бикини</b> · 4 позы</h1>
+  <div class="sub">PNG 848×1264 · зелёный хромакей · кресло · стол в кадре не рисуется (в игре это передний слой <code>room_fg.webp</code>)</div>
 
-<h2>Четыре позы</h2>
-<div class="grid">
-  <div class="card">
-    <a class="thumb" href="seated_01_ankles_crossed.png" download><img src="seated_01_ankles_crossed.png" alt="Поза 1"></a>
-    <div class="meta">
-      <div class="name">1 — сидит, ноги вперёд, щиколотки крест-накрест</div>
-      <div class="size">seated_01_ankles_crossed.png · 848×1264</div>
-      <a class="btn" href="seated_01_ankles_crossed.png" download>Скачать PNG</a>
-      <a class="btn ghost" href="seated_01_ankles_crossed.png" target="_blank">Открыть в полном размере</a>
+  <div class="dlbar">
+    <span class="t">Скачать всё одним файлом:</span>
+    <a class="zip" href="all_poses.zip" download="cannon2_pink_4poses.zip">all_poses.zip · 12 МБ</a>
+    <span style="color:var(--dim);font-size:13px">или по одной кнопке под каждым кадром</span>
+  </div>
+
+  <div class="row">
+    <div class="card">
+      <a class="thumb" href="pose1_ankles_crossed.png" download><img src="pose1_ankles_crossed.png" alt="Поза 1"></a>
+      <div class="meta">
+        <div class="name">Поза 1 — сидит, щиколотки крест-накрест</div>
+        <div class="size">pose1_ankles_crossed.png</div>
+        <a class="btn" href="pose1_ankles_crossed.png" download>Скачать PNG</a>
+        <a class="btn ghost" href="pose1_ankles_crossed.png" target="_blank">Открыть</a>
+      </div>
+    </div>
+
+    <div class="card">
+      <a class="thumb" href="pose2_leg_over_leg.png" download><img src="pose2_leg_over_leg.png" alt="Поза 2"></a>
+      <div class="meta">
+        <div class="name">Поза 2 — нога на ногу, туфля в камеру</div>
+        <div class="size">pose2_leg_over_leg.png</div>
+        <a class="btn" href="pose2_leg_over_leg.png" download>Скачать PNG</a>
+        <a class="btn ghost" href="pose2_leg_over_leg.png" target="_blank">Открыть</a>
+      </div>
+    </div>
+
+    <div class="card hero">
+      <div class="pill">БОСАЯ · СТУПНИ В КАДР</div>
+      <a class="thumb" href="pose3_barefoot_feet_to_camera.png" download><img src="pose3_barefoot_feet_to_camera.png" alt="Поза 3"></a>
+      <div class="meta">
+        <div class="name">Поза 3 — босая, ступни в камеру, корпус и грудь открыты</div>
+        <div class="size">pose3_barefoot_feet_to_camera.png</div>
+        <a class="btn" href="pose3_barefoot_feet_to_camera.png" download>Скачать PNG</a>
+        <a class="btn ghost" href="pose3_barefoot_feet_to_camera.png" target="_blank">Открыть</a>
+      </div>
+    </div>
+
+    <div class="card hero">
+      <div class="pill">НОГИ РАЗДВИНУТЫ</div>
+      <a class="thumb" href="pose4_legs_apart_feet_to_camera.png" download><img src="pose4_legs_apart_feet_to_camera.png" alt="Поза 4"></a>
+      <div class="meta">
+        <div class="name">Поза 4 — ноги на кромке стола, раздвинуты, ступни в камеру</div>
+        <div class="size">pose4_legs_apart_feet_to_camera.png</div>
+        <a class="btn" href="pose4_legs_apart_feet_to_camera.png" download>Скачать PNG</a>
+        <a class="btn ghost" href="pose4_legs_apart_feet_to_camera.png" target="_blank">Открыть</a>
+      </div>
     </div>
   </div>
 
-  <div class="card">
-    <a class="thumb" href="seated_02_leg_over_leg.png" download><img src="seated_02_leg_over_leg.png" alt="Поза 2"></a>
-    <div class="meta">
-      <div class="name">2 — нога на ногу, туфля в камеру</div>
-      <div class="size">seated_02_leg_over_leg.png · 848×1264</div>
-      <a class="btn" href="seated_02_leg_over_leg.png" download>Скачать PNG</a>
-      <a class="btn ghost" href="seated_02_leg_over_leg.png" target="_blank">Открыть в полном размере</a>
+  <h2>Запасные — босая, позы в той же серии</h2>
+  <div class="row">
+    <div class="card">
+      <a class="thumb" href="extra_barefoot_knees_together.png" download><img src="extra_barefoot_knees_together.png" alt="Запас 1"></a>
+      <div class="meta"><div class="name">Колени вместе, ступни в объектив</div>
+        <a class="btn ghost" href="extra_barefoot_knees_together.png" download>Скачать PNG</a></div>
+    </div>
+    <div class="card">
+      <a class="thumb" href="extra_barefoot_diamond.png" download><img src="extra_barefoot_diamond.png" alt="Запас 2"></a>
+      <div class="meta"><div class="name">Колени в стороны, ромб</div>
+        <a class="btn ghost" href="extra_barefoot_diamond.png" download>Скачать PNG</a></div>
+    </div>
+    <div class="card">
+      <a class="thumb" href="extra_barefoot_v_spread_low.png" download><img src="extra_barefoot_v_spread_low.png" alt="Запас 3"></a>
+      <div class="meta"><div class="name">Ноги в V, ступни у кромки стола</div>
+        <a class="btn ghost" href="extra_barefoot_v_spread_low.png" download>Скачать PNG</a></div>
     </div>
   </div>
 
-  <div class="card">
-    <a class="thumb" href="seated_03_knees_up.png" download><img src="seated_03_knees_up.png" alt="Поза 3"></a>
-    <div class="meta">
-      <div class="name">3 — колени подобраны, туфли на кромке сиденья</div>
-      <div class="size">seated_03_knees_up.png · 848×1264</div>
-      <a class="btn" href="seated_03_knees_up.png" download>Скачать PNG</a>
-      <a class="btn ghost" href="seated_03_knees_up.png" target="_blank">Открыть в полном размере</a>
-    </div>
+  <h2>Архив — стоячие (розовые) и синий комплект</h2>
+  <div class="row">
+    <div class="card"><a class="thumb" href="pink_01_hip_on_armrest.png" download><img src="pink_01_hip_on_armrest.png" alt=""></a>
+      <div class="meta"><div class="name">Стоя — бедро на подлокотнике</div><a class="btn ghost" href="pink_01_hip_on_armrest.png" download>Скачать</a></div></div>
+    <div class="card"><a class="thumb" href="pink_02_back_view_backrest.png" download><img src="pink_02_back_view_backrest.png" alt=""></a>
+      <div class="meta"><div class="name">Стоя — 3/4 со спины</div><a class="btn ghost" href="pink_02_back_view_backrest.png" download>Скачать</a></div></div>
+    <div class="card"><a class="thumb" href="pink_04_hip_on_backrest.png" download><img src="pink_04_hip_on_backrest.png" alt=""></a>
+      <div class="meta"><div class="name">Стоя — бедро на спинке</div><a class="btn ghost" href="pink_04_hip_on_backrest.png" download>Скачать</a></div></div>
   </div>
 
-  <div class="card hero">
-    <div class="badge">САМАЯ ГОРЯЧАЯ</div>
-    <a class="thumb" href="seated_04_hot_legs_to_camera.png" download><img src="seated_04_hot_legs_to_camera.png" alt="Поза 4"></a>
-    <div class="meta">
-      <div class="name">4 — ноги вытянуты в камеру, прогиб, руки на сиденье позади</div>
-      <div class="size">seated_04_hot_legs_to_camera.png · 848×1264</div>
-      <a class="btn hot" href="seated_04_hot_legs_to_camera.png" download>Скачать PNG</a>
-      <a class="btn ghost" href="seated_04_hot_legs_to_camera.png" target="_blank">Открыть в полном размере</a>
-    </div>
+  <div class="note">
+    Если кнопка не срабатывает: правый клик по картинке → «Сохранить изображение как…»,
+    или открой файл по прямой ссылке кнопкой «Открыть» и сохрани страницу через <kbd>Ctrl/Cmd + S</kbd>.
+    Стол в кадре специально не нарисован — в игре он накладывается спереди картинкой
+    <kbd>assets/room_fg.webp</kbd> (z-index 6), кромка стола на 83 % высоты кадра.
   </div>
 </div>
-
-<h2>Запасные сидячие</h2>
-<div class="grid">
-  <div class="card">
-    <a class="thumb" href="seated_05_bonus_symmetry.png" download><img src="seated_05_bonus_symmetry.png" alt="Бонус 1"></a>
-    <div class="meta">
-      <div class="name">5 — симметрично, ноги в камеру</div>
-      <div class="size">seated_05_bonus_symmetry.png · 848×1264</div>
-      <a class="btn ghost" href="seated_05_bonus_symmetry.png" download>Скачать PNG</a>
-    </div>
-  </div>
-  <div class="card">
-    <a class="thumb" href="seated_06_bonus_lean_back.png" download><img src="seated_06_bonus_lean_back.png" alt="Бонус 2"></a>
-    <div class="meta">
-      <div class="name">6 — откинулась назад, колено в сторону</div>
-      <div class="size">seated_06_bonus_lean_back.png · 848×1264</div>
-      <a class="btn ghost" href="seated_06_bonus_lean_back.png" download>Скачать PNG</a>
-    </div>
-  </div>
-</div>
-
-<h2>Архив — стоячие позы (розовые)</h2>
-<div class="grid">
-  <div class="card">
-    <a class="thumb" href="pink_01_hip_on_armrest.png" download><img src="pink_01_hip_on_armrest.png" alt="Стоя 1"></a>
-    <div class="meta"><div class="name">Стоя 1 — бедро на подлокотнике</div><a class="btn ghost" href="pink_01_hip_on_armrest.png" download>Скачать PNG</a></div>
-  </div>
-  <div class="card">
-    <a class="thumb" href="pink_02_back_view_backrest.png" download><img src="pink_02_back_view_backrest.png" alt="Стоя 2"></a>
-    <div class="meta"><div class="name">Стоя 2 — 3/4 со спины</div><a class="btn ghost" href="pink_02_back_view_backrest.png" download>Скачать PNG</a></div>
-  </div>
-  <div class="card">
-    <a class="thumb" href="pink_04_hip_on_backrest.png" download><img src="pink_04_hip_on_backrest.png" alt="Стоя 3"></a>
-    <div class="meta"><div class="name">Стоя 3 — бедро на спинке</div><a class="btn ghost" href="pink_04_hip_on_backrest.png" download>Скачать PNG</a></div>
-  </div>
-</div>
-
-<footer>
-  Правый клик по картинке → «Сохранить изображение как…» тоже работает. Папка: <kbd>downloads/bikini</kbd>,
-  синий комплект — <kbd>downloads/bikini/navy</kbd>.
-</footer>
 </body>
 </html>
