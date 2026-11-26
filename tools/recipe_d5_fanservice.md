@@ -176,7 +176,44 @@ hard black outlines, hat, magic wand, text, watermark.
 
 ### План на следующий ход (минимальный дифф, первый запрос хода)
 Взять золотой промпт ДОСЛОВНО и заменить ОДНУ строку CLOTHING:
-`ending at the top of her hips` → `ending at the waist`.
+`ending at the top of her hips` → `ending in a pointed front hem at the top of her hips`
+и в подвязки добавить `hanging from the points of the corset hem`. **Сработало (2 кадра из 7).**
 Остальное не трогать. Один запрос — один тест, чтобы не сжечь накоплением.
 Если пройдёт и низ без ластовицы — зафиксировать как «золотой промпт v2» и уже от него
 набирать костюмы.
+
+## РЕШЕНО: низ корсета без «трусиков» (проход P3)
+Сработавшая формулировка CLOTHING (проверена на 2 кадрах, `_d5P3_p1`, `_d5P3_p5`):
+
+```
+a navy blue satin overbust corset with silver embroidery and front lacing, ending in a pointed
+front hem at the top of her hips; black sheer stockings with tiny star sparkles and black lace tops;
+black suspender straps clipped to the stockings and hanging from the points of the corset hem;
+nothing else on her body
+```
+
+Почему работает: форма подола задана явно — «уголок по центру». Модель рисует V-вырез и
+не достраивает ластовицу, потому что ей задана конечная форма низа, а не место, где корсет
+«заканчивается». Подвязки, висящие от уголков, закрепляют эту геометрию.
+
+### Что НЕ работает для этой задачи (не повторять)
+- `ending just below the natural waist, above her hip bones` — отказ;
+- «hips / thighs left bare by any garment» — отказ (эвфемизм открытости читается фильтром);
+- `panties, briefs, knickers, thong, gusset` в NEGATIVE — не помогает и вредит;
+- `underbust corset worn at the waist` — отказ;
+- `waist corset` — отказ.
+
+### Позы в P3 (7 запросов, 2 прошли)
+| # | поза | итог |
+|---|---|---|
+| p1 | стоит 3/4, рука в бок, другая на спинке | OK |
+| p5 | стоит 3/4 спиной к камере, обе руки на спинке | OK |
+| p2 | тот же p1 без уголка в подоле (контроль) | отказ |
+| p3 | сидит, спина на спинке, рука на спинке | отказ |
+| p4 | сидит на краю, руки на бёдрах | отказ |
+| p6 | стоит, рука на сиденье, ноги крест-накрест | отказ |
+| p7 | лежит вдоль сиденья на боку, ноги на пол | отказ |
+
+Вывод: **стоячие 3/4 позы с руками на кресле проходят лучше сидячих**, если корсет укорочен.
+Сидячие варианты с укороченным корсетом в этом ходе все упали — пробовать их в начале
+следующего хода, первыми запросами.
